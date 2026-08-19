@@ -1,0 +1,5 @@
+[SESSION]
+ai:
+./TEMPLATE_AI/ai_save_template.cmi_save
+env:
+./TEMPLATE_ENV/env_index_template.cmi_save
