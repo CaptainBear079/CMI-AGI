@@ -1,22 +1,26 @@
 #pragma once
+#include <stdint.h>
+
 // Vertex structure
 typedef struct _Vertex_ {
     double x, y, z;
 } Vertex;
 
-// Edge structure
-typedef struct _Edge_ {
-    Vertex v1, v2;
-} Edge;
-
 // Triangle structure
 typedef struct _Triangle_ {
-    Edge e1, e2, e3;
+    Vertex *v1, *v2, *v3;
 } Triangle;
 
-// 3D Object structure
-typedef struct _Object3D_ {
-    Triangle* triangles;
-} Object3D;
+// Square structure
+typedef struct _Square_ {
+    Vertex *v1, *v2, *v3, *v4;
+} Square;
 
-int render();
+// Model structure
+typedef struct _Model_ {
+    double x, y, z; // Coordinates of the model in the World Coordinates System
+    Vertex *vertices;   // All vertecies of a model
+    Triangle *triangles; // All triangles of a model
+} Model;
+
+int render(uint32_t* framebuffer);
