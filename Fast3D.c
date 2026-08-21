@@ -307,8 +307,3 @@ int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
 	then = time(NULL);
 	return 0;
 }
-
-// Main
-int main() {
-	return 0;
-}
