@@ -131,7 +131,7 @@ void* ai_thread(void* arg) {
 // 3D environment_thread
 void* env_thread(void* arg) {
 	while(return_code == 0) {
-		render(&framebuffer);
+		render(&framebuffer, fb_width, fb_height, 90.0);
 		image = XCreateImage(
 			display,
 			DefaultVisual(display, screen),
