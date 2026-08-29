@@ -154,6 +154,7 @@ int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
 	RotationMatrixZ[2][1] = -sin(rTheta * 0.5);
 	RotationMatrixZ[2][2] = cos(rTheta * 0.5);
 	RotationMatrixZ[3][3] = 1.0;
+	ZBuffer = malloc((fb_width * fb_height) * sizeof(double));
 	Mesh cube = { .triangles = malloc(12 * sizeof(Triangle)) };
 	Mesh rotatedXCube = { .triangles = malloc(12 * sizeof(Triangle)) };
 	Mesh rotatedZCube = { .triangles = malloc(12 * sizeof(Triangle)) };
@@ -301,6 +302,13 @@ int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
 		if(projectedCube.triangles[i].v[2].x > bX[i]) {
 			bX[i] = projectedCube.triangles[i].v[2].x;
 		}
+	}
+
+	// - Check if pixel center is in the triangle
+	for(int i = 0; i < 12; i++) {
+		double DotProductAB = (projectedCube.triangles[i].v[1].) * AB;
+		double DotProductBC = BP * BC;
+		double DotProductCA = CP * CA;
 	}
 
 	// Return without errors

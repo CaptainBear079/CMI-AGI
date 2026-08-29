@@ -28,6 +28,7 @@ typedef struct _Mesh_ {
 unsigned long long fb_total_size;
 time_t then;
 double ElapsedTime;
+double **ZBuffer;
 
 // Function declerations
 int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV);
