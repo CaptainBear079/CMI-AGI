@@ -7,6 +7,11 @@
 #include <math.h>
 #include <time.h>
 
+// Point
+typedef struct _Point_ {
+	double x, y;
+} Point;
+
 // Vertex structure
 typedef struct _Vertex_ {
 	double x, y, z;

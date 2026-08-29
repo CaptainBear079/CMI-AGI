@@ -132,6 +132,11 @@ int matrixMultiplication(Vertex* i, Vertex* o, double matrix[4][4]) {
 	}
 }
 
+inline __attribute__((__always_inline__)) PointInTriangle(Point a, Point b, Point c, Point p) {
+	Point ap = { p.x - a.x, p.y - a.y };
+	Point abPerp = 
+}
+
 // Render function
 int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
 	// Setup
@@ -305,10 +310,9 @@ int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
 	}
 
 	// - Check if pixel center is in the triangle
+	int currentPixelX;
 	for(int i = 0; i < 12; i++) {
-		double DotProductAB = (projectedCube.triangles[i].v[1].) * AB;
-		double DotProductBC = BP * BC;
-		double DotProductCA = CP * CA;
+		PointInTriangle();
 	}
 
 	// Return without errors
