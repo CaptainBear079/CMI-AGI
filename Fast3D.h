@@ -1,16 +1,12 @@
 #pragma once
 // Includes
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
-
-// Point
-typedef struct _Point_ {
-	double x, y;
-} Point;
 
 // Vertex structure
 typedef struct _Vertex_ {
@@ -27,13 +23,52 @@ typedef struct _Mesh_ {
 	Vertex* vertices;
 	Triangle* triangles;
 	Vertex pos;
+	unsigned long long tCount;
 } Mesh;
 
-// Global variables
-unsigned long long fb_total_size;
-time_t then;
-double ElapsedTime;
-double **ZBuffer;
+typedef struct _Renderer_ {
+	// System variables
+	time_t then;
+	double ElapsedTime;
+	Mesh camera;
+
+	// Mesh
+	unsigned long long mCount;
+	Mesh* mesh;
+	Mesh* rotatedXMesh;
+	Mesh* rotatedZMesh;
+	Mesh* translatedWorldMesh;
+	Mesh* translatedCameraMesh;
+	Mesh* projectedMesh;
+
+	// Frame buffer
+	uint32_t* fb;                   // Frame buffer
+	int fbWidth;                    // Frame buffer width
+	int fbHeight;                   // Frame buffer height
+	unsigned long long fbTotalSize; // Total frame buffer size
+
+	// Projection Matrix
+	double ProjectionMatrix[4][4];
+	double pmFOV;
+	double pmNear;
+	double pmFar;
+	double pmAspectRatio;
+	double pmFOVRad;
+
+	// Rotation Matrix
+	double RotationMatrixX[4][4];
+	double RotationMatrixZ[4][4];
+	double rmTheta;
+
+	// Rasterization
+	int* rSX;
+	int* rBX;
+	int* rSY;
+	int* rBY;
+	int rCurrentPixelX;
+	int rCurrentPixelY;
+} Renderer;
 
 // Function declerations
-int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV);
+Renderer* Fast3D__init(int fb_width, int fb_height, double FOV);
+int Fast3D__render(Renderer* renderer);

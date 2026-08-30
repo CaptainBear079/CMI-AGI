@@ -120,7 +120,7 @@ Mesh* openOBJ(const char* path) {
 }
 
 // Matrix multiplication
-int matrixMultiplication(Vertex* i, Vertex* o, double matrix[4][4]) {
+void matrixMultiplication(Vertex* i, Vertex* o, double matrix[4][4]) {
 	o->x = i->x * matrix[0][0] + i->y * matrix[1][0] + i->z * matrix[2][0] + matrix[3][0];
 	o->y = i->x * matrix[0][1] + i->y * matrix[1][1] + i->z * matrix[2][1] + matrix[3][1];
 	o->z = i->x * matrix[0][2] + i->y * matrix[1][2] + i->z * matrix[2][2] + matrix[3][2];
@@ -130,192 +130,237 @@ int matrixMultiplication(Vertex* i, Vertex* o, double matrix[4][4]) {
 		o->y /= w;
 		o->z /= w;
 	}
+	return;
 }
 
-inline __attribute__((__always_inline__)) PointInTriangle(Point a, Point b, Point c, Point p) {
-	Point ap = { p.x - a.x, p.y - a.y };
-	Point abPerp = 
+double PointInTriangle(Vertex* a, Vertex* b, Vertex* c, Vertex* p) {
+	double e1 = (b->x - a->x) * (p->y - a->y) - (b->y - a->y) * (p->x - a->x);
+	double e2 = (c->x - b->x) * (p->y - b->y) - (c->y - b->y) * (p->x - b->x);
+	double e3 = (a->x - c->x) * (p->y - c->y) - (a->y - c->y) * (p->x - c->x);
+
+	return (e1 >= 0 && e2 >= 0 && e3 >= 0) ||
+           (e1 <= 0 && e2 <= 0 && e3 <= 0);
+}
+
+Renderer* Fast3D__init(int fb_width, int fb_height, double FOV) {
+	// Create renderer object
+	Renderer* renderer = malloc(sizeof(Renderer));
+
+	// Set frame buffer
+	renderer->fbWidth = fb_width;
+	renderer->fbHeight = fb_height;
+	renderer->pmAspectRatio = fb_height / fb_width;
+	renderer->fbTotalSize = fb_width * fb_height;
+	renderer->fb = malloc(renderer->fbTotalSize * sizeof(uint32_t));
+
+	// Set Projection Matrix
+	renderer->pmNear = 0.02;
+	renderer->pmFar = 4800.0;
+	renderer->pmFOV = FOV;
+	renderer->pmFOVRad = 1.0/ tan(FOV * 0.5 / 180.0 * 3.141592653589793);
+	for(int i = 0; i < 4; i++) {
+		for(int j = 0; j < 4; j++) {
+			renderer->ProjectionMatrix[i][j] = 0.0;
+		}
+	}
+	renderer->ProjectionMatrix[0][0] = renderer->pmAspectRatio * renderer->pmFOVRad;
+	renderer->ProjectionMatrix[1][1] = renderer->pmFOVRad;
+	renderer->ProjectionMatrix[2][2] = renderer->pmFar / (renderer->pmFar - renderer->pmNear);
+	renderer->ProjectionMatrix[3][2] = (-(renderer->pmFar) * renderer->pmNear) / (renderer->pmFar - renderer->pmNear);
+	renderer->ProjectionMatrix[2][3] = 1.0;
+	renderer->ProjectionMatrix[3][3] = 0.0;
+
+	// Set then
+	renderer->then = time(NULL);
+
+	// Return the renderer
+	return renderer;
 }
 
 // Render function
-int render(uint32_t* framebuffer, int fb_width, int fb_height, double pFOV) {
-	// Setup
+int Fast3D__render(Renderer* renderer) {
+	// Measure Elapse time
 	time_t now = time(NULL);
-	ElapsedTime = difftime(now, then);
-	fb_total_size = fb_width * fb_height;
-	double rTheta = 1.0 * ElapsedTime;
-	double ProjectionMatrix[4][4] = { 0.0 };
-	double RotationMatrixX[4][4] = { 0.0 };
-	RotationMatrixX[0][0] = cos(rTheta);
-	RotationMatrixX[0][1] = sin(rTheta);
-	RotationMatrixX[1][0] = -sin(rTheta);
-	RotationMatrixX[1][1] = cos(rTheta);
-	RotationMatrixX[2][2] = 1.0;
-	RotationMatrixX[3][3] = 1.0;
-	double RotationMatrixZ[4][4] = { 0.0 };
-	RotationMatrixZ[0][0] = 1.0;
-	RotationMatrixZ[1][1] = cos(rTheta * 0.5);
-	RotationMatrixZ[1][2] = sin(rTheta * 0.5);
-	RotationMatrixZ[2][1] = -sin(rTheta * 0.5);
-	RotationMatrixZ[2][2] = cos(rTheta * 0.5);
-	RotationMatrixZ[3][3] = 1.0;
-	ZBuffer = malloc((fb_width * fb_height) * sizeof(double));
-	Mesh cube = { .triangles = malloc(12 * sizeof(Triangle)) };
-	Mesh rotatedXCube = { .triangles = malloc(12 * sizeof(Triangle)) };
-	Mesh rotatedZCube = { .triangles = malloc(12 * sizeof(Triangle)) };
-	Mesh translatedCube = { .triangles = malloc(12 * sizeof(Triangle)) };
-	Mesh projectedCube = { .triangles = malloc(12 * sizeof(Triangle)) };
-	{
-	cube.triangles[0] = (Triangle){
-		(Vertex){ 0.0, 0.0, 0.0 },
-		(Vertex){ 1.0, 0.0, 0.0 },
-		(Vertex){ 0.0, 1.0, 0.0 }
-	};
-	cube.triangles[1] = (Triangle){
-		(Vertex){ 0.0, 1.0, 0.0 },
-		(Vertex){ 1.0, 1.0, 0.0 },
-		(Vertex){ 1.0, 0.0, 0.0 }
-	};
-	cube.triangles[2] = (Triangle){
-		(Vertex){ 0.0, 1.0, 0.0 },
-		(Vertex){ 0.0, 0.0, 0.0 },
-		(Vertex){ 0.0, 1.0, 1.0 }
-	};
-	cube.triangles[3] = (Triangle){
-		(Vertex){ 0.0, 1.0, 1.0 },
-		(Vertex){ 0.0, 0.0, 0.0 },
-		(Vertex){ 0.0, 0.0, 1.0 }
-	};
-	cube.triangles[4] = (Triangle){
-		(Vertex){ 0.0, 1.0, 1.0 },
-		(Vertex){ 0.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 1.0, 1.0 }
-	};
-	cube.triangles[5] = (Triangle){
-		(Vertex){ 1.0, 1.0, 1.0 },
-		(Vertex){ 0.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 0.0, 1.0 }
-	};
-	cube.triangles[6] = (Triangle){
-		(Vertex){ 1.0, 1.0, 1.0 },
-		(Vertex){ 1.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 1.0, 0.0 }
-	};
-	cube.triangles[7] = (Triangle){
-		(Vertex){ 1.0, 1.0, 0.0 },
-		(Vertex){ 1.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 0.0, 0.0 }
-	};
-	cube.triangles[8] = (Triangle){
-		(Vertex){ 0.0, 1.0, 0.0 },
-		(Vertex){ 0.0, 1.0, 1.0 },
-		(Vertex){ 1.0, 1.0, 0.0 }
-	};
-	cube.triangles[9] = (Triangle){
-		(Vertex){ 1.0, 1.0, 1.0 },
-		(Vertex){ 0.0, 1.0, 1.0 },
-		(Vertex){ 1.0, 1.0, 0.0 }
-	};
-	cube.triangles[10] = (Triangle){
-		(Vertex){ 0.0, 0.0, 0.0 },
-		(Vertex){ 0.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 0.0, 0.0 }
-	};
-	cube.triangles[11] = (Triangle){
-		(Vertex){ 1.0, 0.0, 1.0 },
-		(Vertex){ 0.0, 0.0, 1.0 },
-		(Vertex){ 1.0, 0.0, 0.0 }
-	};
-	}
-	
+	renderer->ElapsedTime = difftime(now, renderer->then);
+
 	//Clear framebuffer
-	for(int i = 0; i < fb_total_size; i++) {
-		framebuffer[i] = (uint32_t)0;
+	for(unsigned int i = 0; i < renderer->fbTotalSize; i++) {
+		renderer->fb[i] = (uint32_t)0;
 	}
 
-	// Prepare Projection Matrix
-	double pNear = 0.02;
-	double pFar = 4800.0;
-	double pAspectRatio = fb_height/fb_width;
-	double pFOVRad = 1.0/ tan(pFOV * 0.5 / 180.0 * 3.141592653589793);
-	ProjectionMatrix[0][0] = pAspectRatio * pFOVRad;
-	ProjectionMatrix[1][1] = pFOVRad;
-	ProjectionMatrix[2][2] = pFar / (pFar - pNear);
-	ProjectionMatrix[3][2] = (-pFar * pNear) / (pFar - pNear);
-	ProjectionMatrix[2][3] = 1.0;
-	ProjectionMatrix[3][3] = 0.0;
+	// Prepare Rotation Matrix
+	renderer-> rmTheta = 0.1 * renderer->ElapsedTime;
+	renderer->RotationMatrixX[0][0] = cos(renderer->rmTheta);
+	renderer->RotationMatrixX[0][1] = sin(renderer->rmTheta);
+	renderer->RotationMatrixX[1][0] = -sin(renderer->rmTheta);
+	renderer->RotationMatrixX[1][1] = cos(renderer->rmTheta);
+	renderer->RotationMatrixX[2][2] = 1.0;
+	renderer->RotationMatrixX[3][3] = 1.0;
+	renderer->RotationMatrixZ[0][0] = 1.0;
+	renderer->RotationMatrixZ[1][1] = cos(renderer->rmTheta * 0.5);
+	renderer->RotationMatrixZ[1][2] = sin(renderer->rmTheta * 0.5);
+	renderer->RotationMatrixZ[2][1] = -sin(renderer->rmTheta * 0.5);
+	renderer->RotationMatrixZ[2][2] = cos(renderer->rmTheta * 0.5);
+	renderer->RotationMatrixZ[3][3] = 1.0;
 
-	// Apply Rotation (Rotation Matrix)
-	for(int i = 0; i < 12; i++) {
-		matrixMultiplication(&(cube.triangles[i].v[0]), &(rotatedXCube.triangles[i].v[0]), RotationMatrixX);
-		matrixMultiplication(&(cube.triangles[i].v[1]), &(rotatedXCube.triangles[i].v[1]), RotationMatrixX);
-		matrixMultiplication(&(cube.triangles[i].v[2]), &(rotatedXCube.triangles[i].v[2]), RotationMatrixX);
-		matrixMultiplication(&(rotatedXCube.triangles[i].v[0]), &(rotatedZCube.triangles[i].v[0]), RotationMatrixZ);
-		matrixMultiplication(&(rotatedXCube.triangles[i].v[1]), &(rotatedZCube.triangles[i].v[1]), RotationMatrixZ);
-		matrixMultiplication(&(rotatedXCube.triangles[i].v[2]), &(rotatedZCube.triangles[i].v[2]), RotationMatrixZ);
-	}
-	
-	// Translate
-	for(int i = 0; i < 12; i++) {
-		for(int j = 0; j < 3; j++) {
-			translatedCube.triangles[i].v[j].x = rotatedZCube.triangles[i].v[j].x + cube.pos.x;
-			translatedCube.triangles[i].v[j].y = rotatedZCube.triangles[i].v[j].x + cube.pos.y;
-			translatedCube.triangles[i].v[j].z = rotatedZCube.triangles[i].v[j].x + cube.pos.z;
-		}
-	}
-
-	// Apply Projection Matrix
-	for(int i = 0; i < 12; i++) {
-		matrixMultiplication(&(translatedCube.triangles[i].v[0]), &(projectedCube.triangles[i].v[0]), ProjectionMatrix);
-		matrixMultiplication(&(translatedCube.triangles[i].v[1]), &(projectedCube.triangles[i].v[1]), ProjectionMatrix);
-		matrixMultiplication(&(translatedCube.triangles[i].v[2]), &(projectedCube.triangles[i].v[2]), ProjectionMatrix);
-	}
-
-	// Scale to screen
-	for(int i = 0; i < 12; i++) {
-		projectedCube.triangles[i].v[0].x += 1.0;
-		projectedCube.triangles[i].v[1].x += 1.0;
-		projectedCube.triangles[i].v[2].x += 1.0;
-		projectedCube.triangles[i].v[0].y += 1.0;
-		projectedCube.triangles[i].v[1].y += 1.0;
-		projectedCube.triangles[i].v[2].y += 1.0;
-
-		projectedCube.triangles[i].v[0].x *= 0.5 * fb_width;
-		projectedCube.triangles[i].v[1].x *= 0.5 * fb_width;
-		projectedCube.triangles[i].v[2].x *= 0.5 * fb_width;
-		projectedCube.triangles[i].v[0].y *= 0.5 * fb_height;
-		projectedCube.triangles[i].v[1].y *= 0.5 * fb_height;
-		projectedCube.triangles[i].v[2].y *= 0.5 * fb_height;
-	}
-
-	// Rasterization
-	// - Find the smallest and biggest x and y
-	int sX[12], bX[12];
-	for(int i = 0; i < 12; i++) {
-		sX[i] = projectedCube.triangles[i].v[0].x;
-		if(projectedCube.triangles[i].v[1].x > sX[i]) {
-			sX[i] = projectedCube.triangles[i].v[1].x;
-		}
-		if(projectedCube.triangles[i].v[2].x > sX[i]) {
-			sX[i] = projectedCube.triangles[i].v[2].x;
+	// Render Mesh
+	for(unsigned int m = 0; m < renderer->mCount; m++) {
+		// Apply Rotation (Rotation Matrix)
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			matrixMultiplication(
+				&(renderer->mesh[m].triangles[t].v[0]),
+				&(renderer->rotatedXMesh[m].triangles[t].v[0]),
+				renderer->RotationMatrixX
+			);
+			matrixMultiplication(
+				&(renderer->mesh[m].triangles[t].v[1]),
+				&(renderer->rotatedXMesh[m].triangles[t].v[1]),
+				renderer->RotationMatrixX
+			);
+			matrixMultiplication(
+				&(renderer->mesh[m].triangles[t].v[2]),
+				&(renderer->rotatedXMesh[m].triangles[t].v[2]),
+				renderer->RotationMatrixX
+			);
+			
+			matrixMultiplication(
+				&(renderer->rotatedXMesh[m].triangles[t].v[0]),
+				&(renderer->rotatedZMesh[m].triangles[t].v[0]),
+				renderer->RotationMatrixZ
+			);
+			matrixMultiplication(
+				&(renderer->rotatedXMesh[m].triangles[t].v[1]),
+				&(renderer->rotatedZMesh[m].triangles[t].v[1]),
+				renderer->RotationMatrixZ
+			);
+			matrixMultiplication(
+				&(renderer->rotatedXMesh[m].triangles[t].v[2]),
+				&(renderer->rotatedZMesh[m].triangles[t].v[2]),
+				renderer->RotationMatrixZ
+			);
 		}
 
-		bX[i] = projectedCube.triangles[i].v[0].x;
-		if(projectedCube.triangles[i].v[1].x > bX[i]) {
-			bX[i] = projectedCube.triangles[i].v[1].x;
+		// Translate
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			for(int v = 0; v < 3; v++) {
+				// Translate to world space
+				renderer->translatedWorldMesh[m].triangles[t].v[v].x = renderer->rotatedZMesh[m].triangles[t].v[v].x + renderer->mesh[m].pos.x;
+				renderer->translatedWorldMesh[m].triangles[t].v[v].y = renderer->rotatedZMesh[m].triangles[t].v[v].y + renderer->mesh[m].pos.y;
+				renderer->translatedWorldMesh[m].triangles[t].v[v].z = renderer->rotatedZMesh[m].triangles[t].v[v].z + renderer->mesh[m].pos.z;
+
+				// Translate to camera space
+				renderer->translatedCameraMesh[m].triangles[t].v[v].x = renderer->translatedWorldMesh[m].triangles[t].v[v].x + renderer->camera.pos.x;
+				renderer->translatedCameraMesh[m].triangles[t].v[v].y = renderer->translatedWorldMesh[m].triangles[t].v[v].y + renderer->camera.pos.y;
+				renderer->translatedCameraMesh[m].triangles[t].v[v].z = renderer->translatedWorldMesh[m].triangles[t].v[v].z + renderer->camera.pos.z;
+			}
 		}
-		if(projectedCube.triangles[i].v[2].x > bX[i]) {
-			bX[i] = projectedCube.triangles[i].v[2].x;
+
+		// Apply Projection Matrix
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			matrixMultiplication(
+				&(renderer->translatedCameraMesh[m].triangles[t].v[0]),
+				&(renderer->projectedMesh[m].triangles[t].v[0]),
+				renderer->ProjectionMatrix);
+			matrixMultiplication(
+				&(renderer->translatedCameraMesh[m].triangles[t].v[1]),
+				&(renderer->projectedMesh[m].triangles[t].v[1]),
+				renderer->ProjectionMatrix);
+			matrixMultiplication(
+				&(renderer->translatedCameraMesh[m].triangles[t].v[2]),
+				&(renderer->projectedMesh[m].triangles[t].v[2]),
+				renderer->ProjectionMatrix);
 		}
+
+		// Scale to screen
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			renderer->projectedMesh[m].triangles[t].v[0].x += 1.0;
+			renderer->projectedMesh[m].triangles[t].v[1].x += 1.0;
+			renderer->projectedMesh[m].triangles[t].v[2].x += 1.0;
+			renderer->projectedMesh[m].triangles[t].v[0].y += 1.0;
+			renderer->projectedMesh[m].triangles[t].v[1].y += 1.0;
+			renderer->projectedMesh[m].triangles[t].v[2].y += 1.0;
+
+			renderer->projectedMesh[m].triangles[t].v[0].x *= 0.5 * renderer->fbWidth;
+			renderer->projectedMesh[m].triangles[t].v[1].x *= 0.5 * renderer->fbWidth;
+			renderer->projectedMesh[m].triangles[t].v[2].x *= 0.5 * renderer->fbWidth;
+			renderer->projectedMesh[m].triangles[t].v[0].y *= 0.5 * renderer->fbHeight;
+			renderer->projectedMesh[m].triangles[t].v[1].y *= 0.5 * renderer->fbHeight;
+			renderer->projectedMesh[m].triangles[t].v[2].y *= 0.5 * renderer->fbHeight;
+		}
+
+		// Rasterization
+		// - Find the smallest and biggest x and y
+		renderer->rSX = malloc(renderer->mesh[m].tCount * sizeof(int));
+		renderer->rBX = malloc(renderer->mesh[m].tCount * sizeof(int));
+		renderer->rSY = malloc(renderer->mesh[m].tCount * sizeof(int));
+		renderer->rBY = malloc(renderer->mesh[m].tCount * sizeof(int));
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			renderer->rSX[t] = renderer->projectedMesh[m].triangles[t].v[0].x;
+			if(renderer->projectedMesh[m].triangles[t].v[1].x < renderer->rSX[t]) {
+				renderer->rSX[t] = renderer->projectedMesh[m].triangles[t].v[1].x;
+			}
+			if(renderer->projectedMesh[m].triangles[t].v[2].x < renderer->rSX[t]) {
+				renderer->rSX[t] = renderer->projectedMesh[m].triangles[t].v[2].x;
+			}
+
+			renderer->rBX[t] = renderer->projectedMesh[m].triangles[t].v[0].x;
+			if(renderer->projectedMesh[m].triangles[t].v[1].x > renderer->rBX[t]) {
+				renderer->rBX[t] = renderer->projectedMesh[m].triangles[t].v[1].x;
+			}
+			if(renderer->projectedMesh[m].triangles[t].v[2].x > renderer->rBX[t]) {
+				renderer->rBX[t] = renderer->projectedMesh[m].triangles[t].v[2].x;
+			}
+
+			renderer->rSY[t] = renderer->projectedMesh[m].triangles[t].v[0].y;
+			if(renderer->projectedMesh[m].triangles[t].v[1].y < renderer->rSY[t]) {
+				renderer->rSY[t] = renderer->projectedMesh[m].triangles[t].v[1].y;
+			}
+			if(renderer->projectedMesh[m].triangles[t].v[2].y < renderer->rSY[t]) {
+				renderer->rSY[t] = renderer->projectedMesh[m].triangles[t].v[2].y;
+			}
+
+			renderer->rBY[t] = renderer->projectedMesh[m].triangles[t].v[0].y;
+			if(renderer->projectedMesh[m].triangles[t].v[1].y > renderer->rBY[t]) {
+				renderer->rBY[t] = renderer->projectedMesh[m].triangles[t].v[1].y;
+			}
+			if(renderer->projectedMesh[m].triangles[t].v[2].y > renderer->rBY[t]) {
+				renderer->rBY[t] = renderer->projectedMesh[m].triangles[t].v[2].y;
+			}
+		}
+
+		// - Check if pixel center is in the triangle
+		for(unsigned int t = 0; t < renderer->mesh[m].tCount; t++) {
+			renderer->rCurrentPixelX = renderer->rSX[t];
+			renderer->rCurrentPixelY = renderer->rSY[t];
+			while(true) {
+				if(renderer->rCurrentPixelX > renderer->rBX[t]) {
+					renderer->rCurrentPixelX = renderer->rSX[t];
+					renderer->rCurrentPixelY++;
+				}
+				if(renderer->rCurrentPixelY > renderer->rBY[t]) {
+					break;
+				}
+				if(
+					PointInTriangle(
+						&(renderer->projectedMesh[m].triangles[t].v[0]),
+						&(renderer->projectedMesh[m].triangles[t].v[1]),
+						&(renderer->projectedMesh[m].triangles[t].v[2]),
+						&((Vertex){ renderer->rCurrentPixelX + 0.5, renderer->rCurrentPixelY + 0.5, 0.0 })
+					)
+				) {
+					renderer->fb[((renderer->fbHeight - renderer->rCurrentPixelY) * renderer->fbWidth) - (renderer->fbWidth - renderer->rCurrentPixelX)] = 0xFFFFFFFF;
+				}
+				renderer->rCurrentPixelX++;
+			}
+		}
+		free(renderer->rSX);
+		free(renderer->rBX);
+		free(renderer->rSY);
+		free(renderer->rBY);
 	}
 
-	// - Check if pixel center is in the triangle
-	int currentPixelX;
-	for(int i = 0; i < 12; i++) {
-		PointInTriangle();
-	}
-
+	// Record current time
+	renderer->then = time(NULL);
 	// Return without errors
-	then = time(NULL);
 	return 0;
 }
