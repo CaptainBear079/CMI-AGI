@@ -1,0 +1,62 @@
+{
+	cube.triangles[0] = (Triangle){
+		(Vertex){ 0.0, 0.0, 0.0 },
+		(Vertex){ 1.0, 0.0, 0.0 },
+		(Vertex){ 0.0, 1.0, 0.0 }
+	};
+	cube.triangles[1] = (Triangle){
+		(Vertex){ 0.0, 1.0, 0.0 },
+		(Vertex){ 1.0, 1.0, 0.0 },
+		(Vertex){ 1.0, 0.0, 0.0 }
+	};
+	cube.triangles[2] = (Triangle){
+		(Vertex){ 0.0, 1.0, 0.0 },
+		(Vertex){ 0.0, 0.0, 0.0 },
+		(Vertex){ 0.0, 1.0, 1.0 }
+	};
+	cube.triangles[3] = (Triangle){
+		(Vertex){ 0.0, 1.0, 1.0 },
+		(Vertex){ 0.0, 0.0, 0.0 },
+		(Vertex){ 0.0, 0.0, 1.0 }
+	};
+	cube.triangles[4] = (Triangle){
+		(Vertex){ 0.0, 1.0, 1.0 },
+		(Vertex){ 0.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 1.0, 1.0 }
+	};
+	cube.triangles[5] = (Triangle){
+		(Vertex){ 1.0, 1.0, 1.0 },
+		(Vertex){ 0.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 0.0, 1.0 }
+	};
+	cube.triangles[6] = (Triangle){
+		(Vertex){ 1.0, 1.0, 1.0 },
+		(Vertex){ 1.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 1.0, 0.0 }
+	};
+	cube.triangles[7] = (Triangle){
+		(Vertex){ 1.0, 1.0, 0.0 },
+		(Vertex){ 1.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 0.0, 0.0 }
+	};
+	cube.triangles[8] = (Triangle){
+		(Vertex){ 0.0, 1.0, 0.0 },
+		(Vertex){ 0.0, 1.0, 1.0 },
+		(Vertex){ 1.0, 1.0, 0.0 }
+	};
+	cube.triangles[9] = (Triangle){
+		(Vertex){ 1.0, 1.0, 1.0 },
+		(Vertex){ 0.0, 1.0, 1.0 },
+		(Vertex){ 1.0, 1.0, 0.0 }
+	};
+	cube.triangles[10] = (Triangle){
+		(Vertex){ 0.0, 0.0, 0.0 },
+		(Vertex){ 0.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 0.0, 0.0 }
+	};
+	cube.triangles[11] = (Triangle){
+		(Vertex){ 1.0, 0.0, 1.0 },
+		(Vertex){ 0.0, 0.0, 1.0 },
+		(Vertex){ 1.0, 0.0, 0.0 }
+	};
+	}

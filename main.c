@@ -120,7 +120,6 @@ void* ai_thread(void* arg) {
 		// - Touch
 		while(*Touch_Index != *Touch_FirstFreeIndex) {
 			for(int i = 0; i < Touch_NervesPerSignal; i++) {
-				Touch[*Touch_Index][i];
 			}
 		}
 	}
@@ -131,7 +130,8 @@ void* ai_thread(void* arg) {
 // 3D environment_thread
 void* env_thread(void* arg) {
 	while(return_code == 0) {
-		render(&framebuffer, fb_width, fb_height, 90.0);
+		Renderer* renderer = Fast3D__init(fb_width, fb_height, 90.0);
+		Fast3D__render(renderer);
 		image = XCreateImage(
 			display,
 			DefaultVisual(display, screen),
