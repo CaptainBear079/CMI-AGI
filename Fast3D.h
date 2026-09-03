@@ -20,6 +20,8 @@ typedef struct _Triangle_ {
 
 // Mesh structure
 typedef struct _Mesh_ {
+	char* name;
+	char* path;
 	Vertex* vertices;
 	Triangle* triangles;
 	Vertex pos;
@@ -28,9 +30,11 @@ typedef struct _Mesh_ {
 
 typedef struct _Renderer_ {
 	// System variables
+	char* id;
+	short idLength;
 	time_t then;
 	double ElapsedTime;
-	Mesh camera;
+	Vertex camera;
 
 	// Mesh
 	unsigned long long mCount;
@@ -38,7 +42,7 @@ typedef struct _Renderer_ {
 	Mesh* rotatedXMesh;
 	Mesh* rotatedZMesh;
 	Mesh* translatedWorldMesh;
-	Mesh* translatedCameraMesh;
+	//Mesh* translatedCameraMesh;
 	Mesh* projectedMesh;
 
 	// Frame buffer
@@ -46,6 +50,12 @@ typedef struct _Renderer_ {
 	int fbWidth;                    // Frame buffer width
 	int fbHeight;                   // Frame buffer height
 	unsigned long long fbTotalSize; // Total frame buffer size
+	unsigned long long fbIndex;     // Index of the frame buffer
+
+	// Normal generation
+	Vertex normal;
+	Vertex line1;
+	Vertex line2;
 
 	// Projection Matrix
 	double ProjectionMatrix[4][4];
@@ -61,14 +71,16 @@ typedef struct _Renderer_ {
 	double rmTheta;
 
 	// Rasterization
-	int* rSX;
-	int* rBX;
-	int* rSY;
-	int* rBY;
+	int rSX;
+	int rBX;
+	int rSY;
+	int rBY;
 	int rCurrentPixelX;
 	int rCurrentPixelY;
 } Renderer;
 
 // Function declerations
 Renderer* Fast3D__init(int fb_width, int fb_height, double FOV);
+void Fast3D__destroy(Renderer* renderer);
 int Fast3D__render(Renderer* renderer);
+void Fast3D__addMesh(Renderer* renderer, Mesh* mesh);

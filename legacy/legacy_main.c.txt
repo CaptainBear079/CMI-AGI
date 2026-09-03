@@ -1,65 +1,87 @@
+//
+// CMI-AGI v0.0.0
+// Chaotic Much Intelligent is a AI project focusing on AGI
+//
+
 // Includes
 #include <stdio.h>
+#include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <unistd.h>
 
 // Libraries
-#ifdef _W_X11
+#ifdef _USE_X11
 #include <X11/Xlib.h> // X11 library (X Window System)
 #endif
-
 #include "Fast3D.h" // Fast3D library (Chaos Code Project 3D engine)
-#include "cube.h"
 
 // Defines
-// - Argument bitmap
-#define ARG_RESTORE_SESSION 1
-#define ARG_GUI_MODE 2
-#define ARG_SCRIPT 4
+// - Argument bitmap defines
+#define ARG_GUI_MODE 1
+#define ARG_RESTORE_SESSION 2
+
+// - Standard amount of nerve endings
+#ifndef NERVE_ENDINGS
+	#define NERVE_ENDINGS 1000
+#endif
+
+// - Standard touch signal buffer size
+#ifndef TOUCH_SIGNALS
+	#define TOUCH_SIGNALS 100
+#endif
+
+// - Standard nerve ending count per signal
+#ifndef NERVES
+	#define NERVES 3
+#endif
 
 // Global variables
-// - General system variables
-int frameRate = 60;          // Frame rate (FPS)
-short args;                  // Argument bitmap
-FILE* script_fptr;           // Script file handle
-pthread_t env_thread_id;     // pthread_t for the environment thread
-pthread_t control_thread_id; // pthread_t for the control thread
-pthread_t *ai_thread_ids;    // Pointer to a dynamic array of pthread_t for AI threads
-int AIThreadCount;           // Number of AI threads
-int CTRL_ret;                // Return code of the control thread
-int ENV_ret;                 // Return code of the environment thread
-int** AI_ret = NULL;         // Pointer to a dynamic array of return codes for AI threads
-bool sim_shutdown = false;   // Shutdown signal for AI threads
-int return_code = 0;         // Shutdown signal to env_thread and control_thread
-
+// General system variables
+short args;
+int AIWorkerCount;
+pthread_t env_thread_id;
+pthread_t control_thread_id;
+pthread_t *ai_thread_ids;
+bool sim_shutdown = false;
+int return_code;
+void** ENV_RET = NULL;  // Pointer to the address of ENV_ret
+void** CTRL_RET = NULL; // Pointer to the address of CTRL_ret
+void*** AI_RET = NULL;  // Pointer to the address of the AI_ret array
+int ENV_ret;
+int CTRL_ret;
+int *AI_ret = NULL;
 // - X11
-#ifdef _W_X11
+#ifdef _USE_X11
 Display *display = NULL;
 int screen;
 Window root;
+#endif
+// 3D environment variables
+// - X11
+uint32_t* framebuffer;
+int fb_height;
+int fb_width;
+#ifdef _USE_X11
 GC gc;
 XImage *image;
 Window render_output_window;
 XSetWindowAttributes row_xwa;
-#ifdef _GUI_SUPPORT
+#endif
+// GUI control variables
+// - X11 (GUI support only)
+#if defined(_GUI_SUPPORT) && defined(_USE_X11)
 Window control_gui_window;
 XSetWindowAttributes cguiw_xwa;
 #endif
-#endif
-
-// - Window data
-int env_window_width = 1920;
-int env_window_height = 1080;
-
 // Touch variables
 // ### The touch input is made of two values dictating
 // ### where the touch comes from
 // ### - distance to the three closest nerve endings
 // ### - the three closest nerves
 // ### One input per vertex overlapping with the AI's model
-Vertex *NerveEndings = NULL;        // All nerve endings
+Vertex NerveEndings[NERVE_ENDINGS]; // All nerve endings
 int Touch_NervesPerSignal = 0;      // Number of nerves per signal
 double ***Touch = NULL;             // Pointer to the right touch signal buffer
 int ***TouchNerves = NULL;          // Pointer to the right touch signal buffer (Nerve index)
@@ -85,28 +107,30 @@ uint32_t Vision[1080][1920];        // Vision (1080x1920 pixel video feed)
 // - System messages variables
 char* msg[10][256];                 // System messages (up to 255 characters (plus NULL), 10 messages)
 
+// AI save file reading function
+void read_ai_save() {
+	return;
+}
+
 // AI thread
 void* ai_thread(void* arg) {
-	int* ret_code = malloc(sizeof(int));
 	while(sim_shutdown == false) {
 		// Read input (touch, noise (speech), vision, system messages)
 		// Process input
 		// - Touch
+		while(*Touch_Index != *Touch_FirstFreeIndex) {
+			for(int i = 0; i < Touch_NervesPerSignal; i++) {
+			}
+		}
 	}
-	*ret_code = 0;
-	return ret_code; // Shutdown via exit code signal
+	AI_ret = 0;
+	return &AI_ret; // Shutdown via exit code signal
 }
 
 // 3D environment_thread
 void* env_thread(void* arg) {
-	// Frame limiting variables
-	time_t t1;
-	time_t t2;
-	init_cube();
-	Renderer* renderer = Fast3D__init(env_window_width, env_window_height, 90.0);
-	Fast3D__addMesh(renderer, &cube);
 	while(return_code == 0) {
-		t1 = clock();
+		Renderer* renderer = Fast3D__init(fb_width, fb_height, 90.0);
 		Fast3D__render(renderer);
 		image = XCreateImage(
 			display,
@@ -114,9 +138,9 @@ void* env_thread(void* arg) {
 			DefaultDepth(display, screen),
 			ZPixmap,
 			0,
-			(char*)renderer->fb,
-			env_window_width,
-			env_window_height,
+			(char*)framebuffer,
+			fb_width,
+			fb_height,
 			32,
 			0
 		);
@@ -128,20 +152,13 @@ void* env_thread(void* arg) {
 			image,
 			0, 0,
 			0, 0,
-			env_window_width, env_window_height
+			fb_width, fb_height
 		);
 
 		XFlush(display);
-
-		t2 = clock();
-		// Wait long enough to limit the frame rate to frameRate FPS
-		while((t2 - t1) < (CLOCKS_PER_SEC / frameRate)) {
-			t2 = clock();
-		}
 	}
-	Fast3D__destroy(renderer);
 	ENV_ret = 0;
-	return NULL; // Shutdown via exit code signal
+	return &ENV_ret; // Shutdown via exit code signal
 }
 
 // Control thread
@@ -153,115 +170,117 @@ void *control_thread(void* arg) {
 		while(XNextEvent(display, &ev) == 0) {
 			switch(ev.type) {
 				case ButtonPress: {
-					CTRL_ret = 0;
-					return NULL;
+					return 0;
 				} break;
 			}
 		}
-		#endif
-		usleep(1000);
 	}
+	#endif
 	CTRL_ret = 0;
-	return NULL;
+	return &CTRL_RET;
 }
 
 // Control function
 int control_function() {
+	// Commands:
+	// - Create AI
+	// - Import AI
+	// - Export AI
+	// - Remove AI
+	// - Create 3D Model
+	// - Import 3D Model
+	// - Export 3D Model
+	// - Remove 3D Model
+	// - Start Simulation
+	// - Kill Simulation
+
 	// Variables
 	int command = 0;
-	while(true) {
-		usleep(10000);
-		switch(command){
-			// No command
-			case 0: break;
+	switch(command){
+		// No command
+		case 0: break;
 
-			// Create AI
-			case 1: {} break;
+		// Create AI
+		case 1: {} break;
 
-			// Import AI
-			case 2: {} break;
+		// Import AI
+		case 2: {} break;
 
-			// Export AI
-			case 3: {} break;
+		// Export AI
+		case 3: {} break;
 
-			// Remove AI
-			case 4: {} break;
+		// Remove AI
+		case 4: {} break;
 
-			// Create 3D Model
-			case 5: {} break;
+		// Create 3D Model
+		case 5: {} break;
 
-			// Import 3D Model
-			case 6: {} break;
+		// Import 3D Model
+		case 6: {} break;
 
-			// Export 3D Model
-			case 7: {} break;
+		// Export 3D Model
+		case 7: {} break;
 
-			// Remove 3D Model
-			case 8: {} break;
+		// Remove 3D Model
+		case 8: {} break;
 
-			// Start Simulation
-			case 9: {
-				ai_thread_ids = malloc(AIThreadCount * sizeof(pthread_t));
-				for(int i = 0; i < AIThreadCount; i++) {
-					pthread_create(&ai_thread_ids[i], NULL, (void*)ai_thread, NULL);
-				}
-			} break;
+		// Start Simulation
+		case 9: {
+			ai_thread_ids = malloc(AIWorkerCount * sizeof(pthread_t));
+			for(int i = 0; i < AIWorkerCount; i++) {
+				pthread_create(&ai_thread_ids[i], NULL, (void*)ai_thread, NULL);
+			}
+		} break;
 
-			// Kill Simulation
-			case 10: {
-				AI_ret = malloc(AIThreadCount * sizeof(int));
-				sim_shutdown = true;
-				for(int i = 0; i < AIThreadCount; i++) {
-					pthread_join(ai_thread_ids[i], (void**)&(AI_ret[i]));
-				}
-			} break;
+		// Kill Simulation
+		case 10: {
+			AI_ret = malloc(AIWorkerCount * sizeof(int));
+			sim_shutdown = true;
+			for(int i = 0; i < AIWorkerCount; i++) {
+				pthread_join(ai_thread_ids[i], AI_RET[i]);
+			}
+		} break;
 
-			// Quit
-			case 11: {
-				return 0;
-			} break;
-			default: {
-				printf("Invalid command.\n");
-			} break;
-		}
+		// Quit
+		case 11: {
+			return 0;
+		} break;
+		default: {
+			printf("Invalid command.\n");
+		} break;
 	}
 	return -1; // Unexpected error
 }
 
-
 // Control thread
 int main(int argc, char* argv[]) {
 	//
+	// Security check
+	//
+	if(TOUCH_SIGNALS < 1 || NERVES < 3) {
+		fprintf(stderr, "Compilation error: Invalid defines. Error Code: 0x0002\n");
+		return 2;
+	}
+
+	//
 	// Setup
 	//
-	printf("[Setup]: Interpreting argumentss...\n");
+	printf("[Setup]: Interpreting arguments...\n");
 	// - Interpreting arguments
 	for(int i = 1; i < argc; i++) {
-		if(strcmp("--restore", argv[i]) == 0) {
+		if(strcmp("-gui", argv[i]) == 0) {
+			args = args | ARG_GUI_MODE;
+		}
+		else if(strcmp("--restore", argv[i]) == 0) {
 			args = args | ARG_RESTORE_SESSION;
 			break;
-		}
-		else if(strcmp("-s", argv[i]) == 0) {
-			args = args | ARG_SCRIPT;
-			script_fptr = fopen(argv[i + 1], "r");
-			if(script_fptr == NULL) {
-				fprintf(stderr, "[Setup]: \"-s\": Script couldn't be opened. Error Code: 0x0001\n");
-				return 1;
-			}
-		}
-		else if(strcmp("-gui", argv[i]) == 0) {
-			args = args | ARG_GUI_MODE;
 		}
 	}
 
 	printf("[Setup]: Preparing window(s)...\n");
 	// - Prepare windows (control window GUI mode only)
 	//   - Setup X11
-	#ifdef _W_X11
-	if (!XInitThreads()) {
-        fprintf(stderr, "X11 does not support multithreading\n");
-		return -1;
-	}
+	#ifdef _USE_X11
 	if((display = XOpenDisplay(NULL)) == NULL) {
 		fprintf(stderr, "X11: Can't open display. Error Code: 0x0001\n");
 		return 1;
@@ -277,7 +296,7 @@ int main(int argc, char* argv[]) {
 		display,
 		root,
 		0, 0,
-		env_window_width, env_window_height,
+		1920, 1080,
 		5,
 		DefaultDepth(display, screen),
 		InputOutput,
@@ -290,8 +309,9 @@ int main(int argc, char* argv[]) {
 
 	gc = XCreateGC(display, render_output_window, 0, NULL);
 	XSetFunction(display, gc, GXcopy);
+	#endif
 
-	#ifdef _GUI_SUPPORT
+	#if defined(_GUI_SUPPORT) && defined(_USE_X11)
 	cguiw_xwa.background_pixel = WhitePixel(display, screen);                                   // White background
 	cguiw_xwa.border_pixel = BlackPixel(display, screen);                                       // Black border
 	cguiw_xwa.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask; // Mouse and Keyboard events
@@ -311,7 +331,6 @@ int main(int argc, char* argv[]) {
 	XMapWindow(display, control_gui_window);
 	XFlush(display);
 	#endif
-	#endif
 
 	printf("[Setup]: Starting 3D environment...\n");
 	pthread_create(&env_thread_id, NULL, (void*)env_thread, NULL);
@@ -324,8 +343,8 @@ int main(int argc, char* argv[]) {
 	//
 	printf("Setup complete.\n");
 	return_code = control_function();
-	pthread_join(control_thread_id, NULL);
-	pthread_join(env_thread_id, NULL);
+	pthread_join(control_thread_id, CTRL_RET);
+	pthread_join(env_thread_id, ENV_RET);
 
 	//
 	// Cleanup
@@ -333,12 +352,14 @@ int main(int argc, char* argv[]) {
 	#ifdef _USE_X11
 	XUnmapWindow(display, render_output_window);
 	XDestroyWindow(display, render_output_window);
+	#endif
 
-	#ifdef _GUI_SUPPORT
+	#if defined(_GUI_SUPPORT) && defined(_USE_X11)
 	XUnmapWindow(display, control_gui_window);
 	XDestroyWindow(display, control_gui_window);
 	#endif
 
+	#ifdef _USE_X11
 	XCloseDisplay(display);
 	#endif
 
@@ -348,9 +369,9 @@ int main(int argc, char* argv[]) {
 	if(CTRL_ret != 0) {
 		printf("[Control Thread]: Exit code: %d\n", CTRL_ret);
 	}
-	for(int i = 0; i < AIThreadCount; i++) {
+	for(int i = 0; i < AIWorkerCount; i++) {
 		if(AI_ret != 0) {
-			printf("[AI:%d]: Exit code: %d\n", i, *(AI_ret[i]));
+			printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
 		}
 	}
 	printf("[Controller]: Exit code: %d\n", return_code);
