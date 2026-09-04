@@ -35,6 +35,7 @@ typedef struct _Renderer_ {
 	time_t then;
 	double ElapsedTime;
 	Vertex camera;
+	Vertex lightDirection;
 
 	// Mesh
 	unsigned long long mCount;

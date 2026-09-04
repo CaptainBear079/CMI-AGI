@@ -183,7 +183,7 @@ inline __attribute__((always_inline)) void Fast3D__drawLine(Renderer* renderer, 
 	}
 }
 
-inline __attribute__((always_inline)) void Fast3D__rasterize(Renderer* renderer, int m, int t) {
+inline __attribute__((always_inline)) void Fast3D__rasterize(Renderer* renderer, int m, int t, double dp) {
 	// Rasterization
 	// - Find the smallest and biggest x and y
 	renderer->rSX = 0;
@@ -246,15 +246,15 @@ inline __attribute__((always_inline)) void Fast3D__rasterize(Renderer* renderer,
 				continue;
 			}
 			renderer->fbIndex = ((renderer->fbHeight - renderer->rCurrentPixelY) * renderer->fbWidth) - (renderer->fbWidth - renderer->rCurrentPixelX);
-			renderer->fb[renderer->fbIndex] = Fast3D__toRGB((255 * (1.0 / (renderer->projectedMesh[m].triangles[t].v[0].z + 1.0))), (255 * (1.0 / (renderer->projectedMesh[m].triangles[t].v[1].z + 1.0))), (255 * (1.0 / (renderer->projectedMesh[m].triangles[t].v[2].z + 1.0))));
+			renderer->fb[renderer->fbIndex] = Fast3D__toRGB((255 * dp), (255 * dp), (255 * dp));
 			}
 		renderer->rCurrentPixelX++;
 	}
 }
 
-inline __attribute__((always_inline)) void Fast3D__drawTriangle(Renderer* renderer, int m, int t, bool fill) {
+inline __attribute__((always_inline)) void Fast3D__drawTriangle(Renderer* renderer, int m, int t, bool fill, double dp) {
 	if(fill) {
-		Fast3D__rasterize(renderer, m, t);
+		Fast3D__rasterize(renderer, m, t, dp);
 	}
 	else {
 		// Draw triangle edges
@@ -271,7 +271,6 @@ Renderer* Fast3D__init(int fb_width, int fb_height, double FOV) {
 	// Set frame buffer
 	renderer->fbWidth = fb_width;
 	renderer->fbHeight = fb_height;
-	renderer->pmAspectRatio = (double)fb_width / (double)fb_height;
 	renderer->fbTotalSize = fb_width * fb_height;
 	renderer->fb = malloc(renderer->fbTotalSize * sizeof(uint32_t));
 
@@ -279,7 +278,8 @@ Renderer* Fast3D__init(int fb_width, int fb_height, double FOV) {
 	renderer->pmNear = 0.02;
 	renderer->pmFar = 4800.0;
 	renderer->pmFOV = FOV;
-	renderer->pmFOVRad = 1.0/ tan(FOV * 0.5 / 180.0 * 3.141592653589793);
+	renderer->pmAspectRatio = (double)fb_height / (double)fb_width;
+	renderer->pmFOVRad = 1.0 / tan(FOV * 0.5 / 180.0 * 3.141592653589793);
 	for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 4; j++) {
 			renderer->ProjectionMatrix[i][j] = 0.0;
@@ -322,6 +322,9 @@ Renderer* Fast3D__init(int fb_width, int fb_height, double FOV) {
 	renderer->camera.y = 0.0;
 	renderer->camera.z = 0.0;
 
+	// Set light
+	renderer->lightDirection = (Vertex){ 0.0, 0.0, -1.0 };
+
 	// Set then
 	renderer->then = clock();
 
@@ -347,6 +350,9 @@ int Fast3D__render(Renderer* renderer) {
 	clock_t now = clock();
 	renderer->ElapsedTime = (double)(now - renderer->then) / (double)CLOCKS_PER_SEC;
 	renderer->then = now;
+
+	double temp = 0.0;
+	double temp2 = 0.0;
 
 	//Clear framebuffer
 	for(unsigned int i = 0; i < renderer->fbTotalSize; i++) {
@@ -429,14 +435,22 @@ int Fast3D__render(Renderer* renderer) {
 			renderer->normal.y = renderer->line1.z * renderer->line2.x - renderer->line1.x * renderer->line2.z;
 			renderer->normal.z = renderer->line1.x * renderer->line2.y - renderer->line1.y * renderer->line2.x;
 
-			double l = sqrt(renderer->normal.x * renderer->normal.x + renderer->normal.y * renderer->normal.y + renderer->normal.z * renderer->normal.z);
-			renderer->normal.x /= l;
-			renderer->normal.y /= l;
-			renderer->normal.z /= l;
+			temp = sqrt(renderer->normal.x * renderer->normal.x + renderer->normal.y * renderer->normal.y + renderer->normal.z * renderer->normal.z);
+			renderer->normal.x /= temp;
+			renderer->normal.y /= temp;
+			renderer->normal.z /= temp;
 
 			if(renderer->normal.x * (renderer->translatedWorldMesh[m].triangles[t].v[0].x - renderer->camera.x) +
 			   renderer->normal.y * (renderer->translatedWorldMesh[m].triangles[t].v[0].y - renderer->camera.y) +
 			   renderer->normal.z * (renderer->translatedWorldMesh[m].triangles[t].v[0].z - renderer->camera.z) < 0.0) {
+				// Apply light
+				temp = sqrt(renderer->lightDirection.x * renderer->lightDirection.x + renderer->lightDirection.y * renderer->lightDirection.y + renderer->lightDirection.z * renderer->lightDirection.z);
+				renderer->lightDirection.x /= temp;
+				renderer->lightDirection.y /= temp;
+				renderer->lightDirection.z /= temp;
+
+				temp2 = renderer->normal.x * renderer->lightDirection.x + renderer->normal.y * renderer->lightDirection.y + renderer->normal.z * renderer->lightDirection.z;
+
 				// Apply Projection Matrix
 				Fast3D__matrixMultiplication(
 					&(renderer->translatedWorldMesh[m].triangles[t].v[0]),
@@ -466,7 +480,7 @@ int Fast3D__render(Renderer* renderer) {
 				renderer->projectedMesh[m].triangles[t].v[1].y *= 0.5 * renderer->fbHeight;
 				renderer->projectedMesh[m].triangles[t].v[2].y *= 0.5 * renderer->fbHeight;
 
-				Fast3D__drawTriangle(renderer, m, t, false);
+				Fast3D__drawTriangle(renderer, m, t, true, temp2);
 			}
 		}
 	}
