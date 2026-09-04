@@ -1,9 +1,6 @@
 // Includes
 #include "Fast3D.h"
 
-Vertex vertices[8];
-Triangle triangles[12];
-
 // OBJ loader function
 Mesh* openOBJ(const char* path) {
 	// Open .obj file
