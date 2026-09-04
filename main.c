@@ -10,8 +10,8 @@
 #include <X11/Xlib.h> // X11 library (X Window System)
 #endif
 
-#include "Fast3D.h" // Fast3D library (Chaos Code Project 3D engine)
-#include "cube.h"
+#include <Fast3D/Fast3D.h> // Fast3D library (Chaos Code Project 3D engine)
+#include "cube.h"          // TEMP: Cube model (for testing and later use as template)
 
 // Defines
 // - Argument bitmap
