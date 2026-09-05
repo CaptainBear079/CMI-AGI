@@ -25,6 +25,7 @@ typedef struct _WM_X11__Window_ {
 #if defined(_W_X11) && defined(_WM_STD__X11)
 #define WM__Window WM_X11__Window
 #define WM__openDisplay(handler) WM_X11__openDisplay(handler)
+#define WM__closeDisplay(handler) WM_X11__closeDisplay(handler)
 
 #define WM__createWindow(handler, BGPixel, BPixel, eventMask, depth, visual, class) WM_X11__createWindow(handler, BGPixel, BPixel, eventMask, depth, visual, class)
 #define WM__updateWindow(handler) WM_X11__updateWindow(handler)
