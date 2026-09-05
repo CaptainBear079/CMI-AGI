@@ -1,2 +1,2 @@
 [ENV_INDEX]
-{x: 0, y: 0, z: 0, model: ./template_model.obj}
+{pos: {x: 0, y: 0, z: 0}, rot: {x: 0, y: 0, z: 0}, model: "./cube.obj"}

@@ -1,2 +1,2 @@
-[AI]
-{model: NULL, neurons: 0.0}
+[AI_INDEX]
+{base: "dev-test-v0.0.1", entity: "./entities/test.0.cmi_save", model: "./entities/test.0.fbx", modelmap: "./entities/test.0.modelmap"}
