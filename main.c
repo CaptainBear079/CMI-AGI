@@ -231,13 +231,12 @@ int main(int argc, char* argv[]) {
 
 	printf("[Setup]: Preparing window(s)...\n");
 	// - Prepare windows (control window GUI mode only)
-	//   - Setup X11
-	#ifdef _W_X11
+	//   - Setup Window Manager
 	if(!WM__useMultithreading) {
 		return -1;
 	}
 
-	WM__getInfo(&row);
+	WM__openDisplay(&row);
 	row.windowWidth = env_window_width;
 	row.windowHeight = env_window_height;
 	
@@ -250,7 +249,7 @@ int main(int argc, char* argv[]) {
 		InputOutput
 	);
 
-	WM__createGraphicContext(&row);
+	WM__createGraphicsContext(&row);
 
 	#ifdef _GUI_SUPPORT
 	WM__getInfo(&cgui);
@@ -263,7 +262,6 @@ int main(int argc, char* argv[]) {
 		DefaultVisual(cgui.display, cgui.screen),
 		InputOutput
 	);
-	#endif
 	#endif
 
 	printf("[Setup]: Starting 3D environment...\n");
@@ -283,14 +281,12 @@ int main(int argc, char* argv[]) {
 	//
 	// Cleanup
 	//
-	#ifdef _W_X11
 	WM__destroyWindow(row);
 	WM__closeDisplay(row);
 
 	#ifdef _GUI_SUPPORT
 	WM__destroyWindow(cgui);
 	WM__closeDisplay(cgui);
-	#endif
 	#endif
 
 	if(ENV_ret != 0) {
