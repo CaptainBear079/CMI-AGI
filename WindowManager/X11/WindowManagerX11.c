@@ -46,8 +46,8 @@ void WM_X11__updateWindow(WM_X11__Window* handler) {
 }
 
 void WM_X11__destroyWindow(WM_X11__Window* handler) {
-	XUnmapWindow(handler->display, handler);
-	XDestroyWindow(handler->display, handler);
+	XUnmapWindow(handler->display, handler->window);
+	XDestroyWindow(handler->display, handler->window);
 	return;
 }
 
