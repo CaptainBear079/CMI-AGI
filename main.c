@@ -1,13 +1,16 @@
 // Includes
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <pthread.h>
 #include <unistd.h>
 
 // Libraries
+#include "WindowManager/WindowManager.h" // Window Manager
 #ifdef _W_X11
-#include <X11/Xlib.h> // X11 library (X Window System)
+#include <X11/Xlib.h>                    // X11 library (X Window System)
 #endif
 
 #include <Fast3D/Fast3D.h> // Fast3D library (Chaos Code Project 3D engine)
@@ -30,23 +33,14 @@ pthread_t *ai_thread_ids;    // Pointer to a dynamic array of pthread_t for AI t
 int AIThreadCount;           // Number of AI threads
 int CTRL_ret;                // Return code of the control thread
 int ENV_ret;                 // Return code of the environment thread
-int** AI_ret = NULL;         // Pointer to a dynamic array of return codes for AI threads
+int* AI_ret = NULL;          // Pointer to a dynamic array of return codes for AI threads
 bool sim_shutdown = false;   // Shutdown signal for AI threads
 int return_code = 0;         // Shutdown signal to env_thread and control_thread
 
-// - X11
-#ifdef _W_X11
-Display *display = NULL;
-int screen;
-Window root;
-GC gc;
-XImage *image;
-Window render_output_window;
-XSetWindowAttributes row_xwa;
+// Window Manager
+WM__Window row;
 #ifdef _GUI_SUPPORT
-Window control_gui_window;
-XSetWindowAttributes cguiw_xwa;
-#endif
+WM__Window cgui;
 #endif
 
 // - Window data
@@ -105,33 +99,14 @@ void* env_thread(void* arg) {
 	init_cube();
 	Renderer* renderer = Fast3D__init(env_window_width, env_window_height, 90.0);
 	Fast3D__addMesh(renderer, &cube);
+	WM__createImage(row, renderer->fb);
 	while(return_code == 0) {
 		t1 = clock();
 		Fast3D__render(renderer);
-		image = XCreateImage(
-			display,
-			DefaultVisual(display, screen),
-			DefaultDepth(display, screen),
-			ZPixmap,
-			0,
-			(char*)renderer->fb,
-			env_window_width,
-			env_window_height,
-			32,
-			0
-		);
 
-		XPutImage(
-			display,
-			render_output_window,
-			gc,
-			image,
-			0, 0,
-			0, 0,
-			env_window_width, env_window_height
-		);
+		WM__updateImage(row);
 
-		XFlush(display);
+		WM__updateWindow(row);
 
 		t2 = clock();
 		// Wait long enough to limit the frame rate to frameRate FPS
@@ -147,10 +122,10 @@ void* env_thread(void* arg) {
 // Control thread
 void *control_thread(void* arg) {
 	while(return_code == 0) {
-		#if defined(_USE_X11) && defined(_GUI_SUPPORT)
+		#ifdef _W_X11
 		XEvent ev;
 
-		while(XNextEvent(display, &ev) == 0) {
+		while(XNextEvent(row.display, &ev) == 0) {
 			switch(ev.type) {
 				case ButtonPress: {
 					CTRL_ret = 0;
@@ -258,58 +233,36 @@ int main(int argc, char* argv[]) {
 	// - Prepare windows (control window GUI mode only)
 	//   - Setup X11
 	#ifdef _W_X11
-	if (!XInitThreads()) {
-        fprintf(stderr, "X11 does not support multithreading\n");
+	if(!WM__useMultithreading) {
 		return -1;
 	}
-	if((display = XOpenDisplay(NULL)) == NULL) {
-		fprintf(stderr, "X11: Can't open display. Error Code: 0x0001\n");
-		return 1;
-	}
 
-	screen = XDefaultScreen(display);
-	root = RootWindow(display, screen);
-	row_xwa.background_pixel = BlackPixel(display, screen); // Black background
-	row_xwa.border_pixel = WhitePixel(display, screen);     // White border
-	row_xwa.event_mask = NoEventMask;                       // No events
-
-	render_output_window = XCreateWindow(
-		display,
-		root,
-		0, 0,
-		env_window_width, env_window_height,
-		5,
-		DefaultDepth(display, screen),
-		InputOutput,
-		DefaultVisual(display, screen),
-		CWBackPixel | CWBorderPixel | CWEventMask,
-		&row_xwa
+	WM__getInfo(&row);
+	row.windowWidth = env_window_width;
+	row.windowHeight = env_window_height;
+	
+	WM__createWindow(
+		&row,
+		BlackPixel(row.display, row.screen),
+		WhitePixel(row.display, row.screen),
+		NoEventMask, DefaultDepth(row.display, row.screen),
+		DefaultVisual(row.display, row.screen),
+		InputOutput
 	);
-	XMapWindow(display, render_output_window);
-	XFlush(display);
 
-	gc = XCreateGC(display, render_output_window, 0, NULL);
-	XSetFunction(display, gc, GXcopy);
+	WM__createGraphicContext(&row);
 
 	#ifdef _GUI_SUPPORT
-	cguiw_xwa.background_pixel = WhitePixel(display, screen);                                   // White background
-	cguiw_xwa.border_pixel = BlackPixel(display, screen);                                       // Black border
-	cguiw_xwa.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask; // Mouse and Keyboard events
-
-	control_gui_window = XCreateWindow(
-		display,
-		root,
-		0, 0,
-		1920, 1080,
-		5,
-		DefaultDepth(display, screen),
-		InputOutput,
-		DefaultVisual(display, screen),
-		CWBackPixel | CWBorderPixel | CWEventMask,
-		&cguiw_xwa
+	WM__getInfo(&cgui);
+	WM__createWindow(
+		cgui,
+		WhitePixel(cgui.display, cgui.screen),
+		BlackPixel(cgui.display, cgui.screen),
+		KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
+		DefaultDepth(cgui.display, cgui.screen),
+		DefaultVisual(cgui.display, cgui.screen),
+		InputOutput
 	);
-	XMapWindow(display, control_gui_window);
-	XFlush(display);
 	#endif
 	#endif
 
@@ -330,16 +283,14 @@ int main(int argc, char* argv[]) {
 	//
 	// Cleanup
 	//
-	#ifdef _USE_X11
-	XUnmapWindow(display, render_output_window);
-	XDestroyWindow(display, render_output_window);
+	#ifdef _W_X11
+	WM__destroyWindow(row);
+	WM__closeDisplay(row);
 
 	#ifdef _GUI_SUPPORT
-	XUnmapWindow(display, control_gui_window);
-	XDestroyWindow(display, control_gui_window);
+	WM__destroyWindow(cgui);
+	WM__closeDisplay(cgui);
 	#endif
-
-	XCloseDisplay(display);
 	#endif
 
 	if(ENV_ret != 0) {
@@ -350,7 +301,7 @@ int main(int argc, char* argv[]) {
 	}
 	for(int i = 0; i < AIThreadCount; i++) {
 		if(AI_ret != 0) {
-			printf("[AI:%d]: Exit code: %d\n", i, *(AI_ret[i]));
+			printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
 		}
 	}
 	printf("[Controller]: Exit code: %d\n", return_code);

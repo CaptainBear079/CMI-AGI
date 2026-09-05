@@ -305,6 +305,7 @@ Renderer* Fast3D__init(int fb_width, int fb_height, double FOV) {
 			renderer->RotationMatrixZ[i][j] = 0.0;
 		}
 	}
+	renderer->rmTheta = 0.0;
 
 	// Set Rasterization
 	renderer->rSX = 0;
