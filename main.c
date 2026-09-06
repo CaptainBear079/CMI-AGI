@@ -146,7 +146,7 @@ int control_function() {
 					pthread_join(ai_thread_ids[i], (void**)&(AI_ret[i]));
 				}
 				for(int i = 0; i < AIThreadCount; i++) {
-					if(AI_ret != 0) {
+					if(AI_ret[i] != 0) {
 						printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
 					}
 				}
