@@ -97,14 +97,14 @@ void* env_thread(void* arg) {
 	init_cube();
 	Renderer* renderer = Fast3D__init(rowWindowWidth, rowWindowHeight, 90.0);
 	Fast3D__addMesh(renderer, &cube);
-	WM__createImage(row, renderer->fb);
+	WM__createImage(&row, renderer->fb);
 	while(return_code == 0) {
 		t1 = clock();
 		Fast3D__render(renderer);
 
-		WM__updateImage(row);
+		WM__updateImage(&row);
 
-		WM__updateWindow(row);
+		WM__updateWindow(&row);
 
 		t2 = clock();
 		// Wait long enough to limit the frame rate to frameRate FPS
@@ -230,7 +230,7 @@ int main(int argc, char* argv[]) {
 	printf("[Setup]: Preparing window(s)...\n");
 	// - Prepare windows (control window GUI mode only)
 	//   - Setup Window Manager
-	if(!WM__useMultithreading) {
+	if(WM__useMultithreading) {
 		return -1;
 	}
 
@@ -250,9 +250,9 @@ int main(int argc, char* argv[]) {
 	WM__createGraphicsContext(&row);
 
 	#ifdef _GUI_SUPPORT
-	WM__getInfo(&cgui);
+	WM__openDisplay(&cgui);
 	WM__createWindow(
-		cgui,
+		&cgui,
 		WhitePixel(cgui.display, cgui.screen),
 		BlackPixel(cgui.display, cgui.screen),
 		KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
@@ -279,12 +279,12 @@ int main(int argc, char* argv[]) {
 	//
 	// Cleanup
 	//
-	WM__destroyWindow(row);
-	WM__closeDisplay(row);
+	WM__destroyWindow(&row);
+	WM__closeDisplay(&row);
 
 	#ifdef _GUI_SUPPORT
-	WM__destroyWindow(cgui);
-	WM__closeDisplay(cgui);
+	WM__destroyWindow(&cgui);
+	WM__closeDisplay(&cgui);
 	#endif
 
 	if(ENV_ret != 0) {
