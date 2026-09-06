@@ -4,22 +4,8 @@
 #ifdef _W_X11
 #include <X11/Xlib.h>
 #include "X11/WindowManagerX11.h"
-typedef struct _WM_X11__Window_ {
-	Display *display;
-	int screen;
-	Window root;
-	Window window;
-	XSetWindowAttributes xwa;
-	GC gc;
-	XImage* image;
-	int windowX;
-	int windowY;
-	unsigned int windowBorderWidth;
-	unsigned int windowWidth;
-	unsigned int windowHeight;
-	unsigned int class;
-} WM_X11__Window;
 #endif
+
 
 // Window Manager Standard
 #if defined(_W_X11) && defined(_WM_STD__X11)

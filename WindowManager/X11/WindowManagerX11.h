@@ -5,7 +5,22 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <X11/Xlib.h>
-#include "../WindowManager.h"
+
+typedef struct _WM_X11__Window_ {
+	Display *display;
+	int screen;
+	Window root;
+	Window window;
+	XSetWindowAttributes xwa;
+	GC gc;
+	XImage* image;
+	int windowX;
+	int windowY;
+	unsigned int windowBorderWidth;
+	unsigned int windowWidth;
+	unsigned int windowHeight;
+	unsigned int class;
+} WM_X11__Window;
 
 bool WM_X11__openDisplay(WM_X11__Window* handler);
 void WM_X11__closeDisplay(WM_X11__Window* handler);

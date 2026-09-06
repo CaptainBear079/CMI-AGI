@@ -8,7 +8,7 @@ bool WM_X11__openDisplay(WM_X11__Window* handler) {
 
 	handler->screen = XDefaultScreen(handler->display);
 	handler->root = RootWindow(handler->display, handler->screen);
-	return;
+	return 0;
 }
 
 void WM_X11__closeDisplay(WM_X11__Window* handler) {
