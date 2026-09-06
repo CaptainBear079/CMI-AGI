@@ -8,19 +8,17 @@
 #include <unistd.h>
 
 // Libraries
-#include "WindowManager/WindowManager.h" // Window Manager
-#ifdef _W_X11
-#include <X11/Xlib.h>                    // X11 library (X Window System)
-#endif
-
 #include <Fast3D/Fast3D.h> // Fast3D library (Chaos Code Project 3D engine)
-#include "cube.h"          // TEMP: Cube model (for testing and later use as template)
+#include "Fast3D/cube.h"          // TEMP: Cube model (for testing and later use as template)
+
+// Modules
+#include "WindowManager/WindowManager.h" // Window Manager
 
 // Defines
 // - Argument bitmap
-#define ARG_RESTORE_SESSION 1
-#define ARG_GUI_MODE 2
-#define ARG_SCRIPT 4
+#define CMI__ARG_RESTORE_SESSION 1
+#define CMI__ARG_GUI_MODE 2
+#define CMI__ARG_SCRIPT 4
 
 // Global variables
 // - General system variables
@@ -44,8 +42,8 @@ WM__Window cgui;
 #endif
 
 // - Window data
-int env_window_width = 1920;
-int env_window_height = 1080;
+int rowWindowWidth = 1920;
+int rowWindowHeight = 1080;
 
 // Touch variables
 // ### The touch input is made of two values dictating
@@ -97,7 +95,7 @@ void* env_thread(void* arg) {
 	time_t t1;
 	time_t t2;
 	init_cube();
-	Renderer* renderer = Fast3D__init(env_window_width, env_window_height, 90.0);
+	Renderer* renderer = Fast3D__init(rowWindowWidth, rowWindowHeight, 90.0);
 	Fast3D__addMesh(renderer, &cube);
 	WM__createImage(row, renderer->fb);
 	while(return_code == 0) {
@@ -213,11 +211,11 @@ int main(int argc, char* argv[]) {
 	// - Interpreting arguments
 	for(int i = 1; i < argc; i++) {
 		if(strcmp("--restore", argv[i]) == 0) {
-			args = args | ARG_RESTORE_SESSION;
+			args = args | CMI__ARG_RESTORE_SESSION;
 			break;
 		}
 		else if(strcmp("-s", argv[i]) == 0) {
-			args = args | ARG_SCRIPT;
+			args = args | CMI__ARG_SCRIPT;
 			script_fptr = fopen(argv[i + 1], "r");
 			if(script_fptr == NULL) {
 				fprintf(stderr, "[Setup]: \"-s\": Script couldn't be opened. Error Code: 0x0001\n");
@@ -225,7 +223,7 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		else if(strcmp("-gui", argv[i]) == 0) {
-			args = args | ARG_GUI_MODE;
+			args = args | CMI__ARG_GUI_MODE;
 		}
 	}
 
@@ -237,8 +235,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	WM__openDisplay(&row);
-	row.windowWidth = env_window_width;
-	row.windowHeight = env_window_height;
+	row.windowWidth = rowWindowWidth;
+	row.windowHeight = rowWindowHeight;
 	
 	WM__createWindow(
 		&row,

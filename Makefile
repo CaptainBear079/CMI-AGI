@@ -1,13 +1,14 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -fPIC -I.
 LIB_NAME = libFast3D.so
+LIB_SRC = ./Fast3D/Fast3D.c
 NAME = cmi-agi
 BUILD_DIR = ./build
 
 all: $(LIB_NAME) $(APP_NAME)
 
-$(LIB_NAME): Fast3D.c Fast3D.h
-	$(CC) $(CFLAGS) -shared -o $@ Fast3D.c -lm
+$(LIB_NAME):
+	$(CC) $(CFLAGS) -shared -o $@ $(LIB_SRC) -lm
 
 all: $(NAME)
 
