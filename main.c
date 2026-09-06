@@ -255,12 +255,10 @@ int main(int argc, char* argv[]) {
 	// Cleanup
 	//
 	WM__destroyWindow(&windows, 0);
-	WM__closeDisplay(&windows);
-
 	#ifdef _GUI_SUPPORT
 	WM__destroyWindow(&windows, 1);
-	WM__closeDisplay(&windows);
 	#endif
+	WM__closeDisplay(&windows);
 
 	if(ENV_ret != 0) {
 		printf("[Environment]: Exit code: %d\n", ENV_ret);
