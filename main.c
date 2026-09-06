@@ -22,7 +22,6 @@
 
 // Global variables
 // - General system variables
-int frameRate = 60;          // Frame rate (FPS)
 short args;                  // Argument bitmap
 FILE* script_fptr;           // Script file handle
 pthread_t env_thread_id;     // pthread_t for the environment thread
@@ -42,34 +41,6 @@ WM windows;
 int rowWindowWidth = 1920;
 int rowWindowHeight = 1080;
 
-// Touch variables
-// ### The touch input is made of two values dictating
-// ### where the touch comes from
-// ### - distance to the three closest nerve endings
-// ### - the three closest nerves
-// ### One input per vertex overlapping with the AI's model
-Vertex *NerveEndings = NULL;        // All nerve endings
-int Touch_NervesPerSignal = 0;      // Number of nerves per signal
-double ***Touch = NULL;             // Pointer to the right touch signal buffer
-int ***TouchNerves = NULL;          // Pointer to the right touch signal buffer (Nerve index)
-int *Touch_Index = NULL;            // Pointer to the right touch signal buffer index
-int *Touch_FirstFreeIndex = NULL;   // Pointer to the right first free index of the touch signal buffer
-// - Basic Touch Variables
-double **BTouch = NULL;             // Touch signal buffer
-int **BTouchNerves = NULL;          // Touch signal buffer (Nerve index)
-int BTouch_Index = 0;               // Shows the current index of the signal buffer
-int BTouch_FirstFreeIndex = 0;      // Shows the first free position in the signal buffer
-// - Extended Touch Variables
-double **EXTouch = NULL;            // Extended Touch signal buffer (using malloc)
-int **EXTouchNerves = NULL;         // Extended Touch signal buffer (Nerve index, using malloc)
-int EXTouch_Index = 0;              // Shows the current index of the signal buffer
-int EXTouch_FirstFreeIndex = 0;     // Shows the first free position in the signal buffer
-// Noise variables
-// - Noise Variables
-double Noise[2];                    // Two noise signals (raw audio, two ears)
-// Vision variables
-// - Vision Variables
-uint32_t Vision[1080][1920];        // Vision (1080x1920 pixel video feed)
 // System variables
 // - System messages variables
 char* msg[10][256];                 // System messages (up to 255 characters (plus NULL), 10 messages)
@@ -88,26 +59,16 @@ void* ai_thread(void* arg) {
 
 // 3D environment_thread
 void* env_thread(void* arg) {
-	// Frame limiting variables
-	time_t t1;
-	time_t t2;
 	init_cube();
 	Renderer* renderer = Fast3D__init(rowWindowWidth, rowWindowHeight, 90.0);
 	Fast3D__addMesh(renderer, &cube);
 	WM__createImage(&windows, 0, renderer->fb);
 	while(return_code == 0) {
-		t1 = clock();
 		Fast3D__render(renderer);
 
 		WM__updateImage(&windows, 0);
 
 		WM__updateWindow(&windows);
-
-		t2 = clock();
-		// Wait long enough to limit the frame rate to frameRate FPS
-		while((t2 - t1) < (CLOCKS_PER_SEC / frameRate)) {
-			t2 = clock();
-		}
 	}
 	Fast3D__destroy(renderer);
 	ENV_ret = 0;
@@ -184,6 +145,12 @@ int control_function() {
 				for(int i = 0; i < AIThreadCount; i++) {
 					pthread_join(ai_thread_ids[i], (void**)&(AI_ret[i]));
 				}
+				for(int i = 0; i < AIThreadCount; i++) {
+					if(AI_ret != 0) {
+						printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
+					}
+				}
+				free(AI_ret);
 			} break;
 
 			// Quit
@@ -234,9 +201,12 @@ int main(int argc, char* argv[]) {
 	WM__openDisplay(&windows);
 
 	#ifdef _GUI_SUPPORT
-	windows.windows = malloc(2 * sizeof(WM__Window));
+	windows.windows = calloc(2, sizeof(WM__Window));
+	windows.windows[0].windowBorderWidth = 5;
+	windows.windows[1].windowBorderWidth = 5;
 	#else
-	windows.windows = malloc(sizeof(WM__Window));
+	windows.windows = calloc(1, sizeof(WM__Window));
+	windows.windows[0].windowBorderWidth = 5;
 	#endif
 
 	windows.windows[0].windowWidth = rowWindowWidth;
@@ -254,6 +224,8 @@ int main(int argc, char* argv[]) {
 	WM__createGraphicsContext(&windows, 0);
 
 	#ifdef _GUI_SUPPORT
+	windows.windows[1].windowWidth = rowWindowWidth;
+	windows.windows[1].windowHeight = rowWindowHeight;
 	WM__createWindow(
 		&windows, 1,
 		WhitePixel(windows.display, windows.screen),
@@ -295,11 +267,6 @@ int main(int argc, char* argv[]) {
 	}
 	if(CTRL_ret != 0) {
 		printf("[Control Thread]: Exit code: %d\n", CTRL_ret);
-	}
-	for(int i = 0; i < AIThreadCount; i++) {
-		if(AI_ret != 0) {
-			printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
-		}
 	}
 	printf("[Controller]: Exit code: %d\n", return_code);
 	return return_code;
