@@ -45,18 +45,6 @@ int rowWindowHeight = 1080;
 // - System messages variables
 char* msg[10][256];                 // System messages (up to 255 characters (plus NULL), 10 messages)
 
-// AI thread
-void* ai_thread(void* arg) {
-	int* ret_code = malloc(sizeof(int));
-	while(sim_shutdown == false) {
-		// Read input (touch, noise (speech), vision, system messages)
-		// Process input
-		// - Touch
-	}
-	*ret_code = 0;
-	return ret_code; // Shutdown via exit code signal
-}
-
 // 3D environment_thread
 void* env_thread(void* arg) {
 	init_cube();

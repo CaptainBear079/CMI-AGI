@@ -1,6 +1,16 @@
 #pragma once
 #include <Fast3D/Fast3D.h>
 
+#define EM_EVENT_EMPTY 0
+#define EM_EVENT_SHUTDOWN 1
+
+typedef struct _EM_Event_ {
+	int event;
+} EM_Event;
+
+typedef struct _Neuron_ {
+} Neuron;
+
 // The touch signal is made of
 // - The indexes of the three closest nerves
 // - The distance of the OBJ to the saved nerves
@@ -26,22 +36,30 @@ typedef struct _EM_Vision_ {
 typedef struct _EM_Entity_ {
 	char* name;
 	unsigned int id;
+	//
 	// Touch variables
 	Vertex *NerveEndings;                          // All nerve endings
 	int TSBIndex;                                  // Current index of the touch signal buffer
 	int TSBFirstFreeIndex;                         // First free/unused touch signal buffer index
+	union {
 	// - Basic Touch Variables
 	EM_Basic_Touch_Signal* BasicTouchSignalBuffer; // Basic touch signal buffer
 	// - Extended Touch Variables
 	EM_Ex_Touch_Signal* ExTouchSignalBuffer;       // Extended touch signal buffer
+	} TouchSignalBuffer;
 	// Noise variables
 	// Vision variables
 	EM_Vision vision;                              // Vision
+	// Telepathic communication
+	int channel;                                   // Which telepathic text output is used
+	char msg[1025];                                // Telepathic text output
 } EM_Entity;
 
 typedef struct _EM_ {
 	EM_Entity* entities;
 	int entityCount;
+	EM_Event* events;
+	int eventIndex;
 } EM;
 
 void EM__createAIThread(EM* handler);
