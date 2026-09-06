@@ -36,10 +36,7 @@ bool sim_shutdown = false;   // Shutdown signal for AI threads
 int return_code = 0;         // Shutdown signal to env_thread and control_thread
 
 // Window Manager
-WM__Window row;
-#ifdef _GUI_SUPPORT
-WM__Window cgui;
-#endif
+WM windows;
 
 // - Window data
 int rowWindowWidth = 1920;
@@ -97,14 +94,14 @@ void* env_thread(void* arg) {
 	init_cube();
 	Renderer* renderer = Fast3D__init(rowWindowWidth, rowWindowHeight, 90.0);
 	Fast3D__addMesh(renderer, &cube);
-	WM__createImage(&row, renderer->fb);
+	WM__createImage(&windows, 0, renderer->fb);
 	while(return_code == 0) {
 		t1 = clock();
 		Fast3D__render(renderer);
 
-		WM__updateImage(&row);
+		WM__updateImage(&windows, 0);
 
-		WM__updateWindow(&row);
+		WM__updateWindow(&windows);
 
 		t2 = clock();
 		// Wait long enough to limit the frame rate to frameRate FPS
@@ -123,7 +120,7 @@ void *control_thread(void* arg) {
 		#ifdef _W_X11
 		XEvent ev;
 
-		while(XNextEvent(row.display, &ev) == 0) {
+		while(XNextEvent(windows.display, &ev) == 0) {
 			switch(ev.type) {
 				case ButtonPress: {
 					CTRL_ret = 0;
@@ -234,30 +231,36 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	WM__openDisplay(&row);
-	row.windowWidth = rowWindowWidth;
-	row.windowHeight = rowWindowHeight;
+	WM__openDisplay(&windows);
+
+	#ifdef _GUI_SUPPORT
+	windows.windows = malloc(2 * sizeof(WM__Window));
+	#else
+	windows.windows = malloc(sizeof(WM__Window));
+	#endif
+
+	windows.windows[0].windowWidth = rowWindowWidth;
+	windows.windows[0].windowHeight = rowWindowHeight;
 	
 	WM__createWindow(
-		&row,
-		BlackPixel(row.display, row.screen),
-		WhitePixel(row.display, row.screen),
-		NoEventMask, DefaultDepth(row.display, row.screen),
-		DefaultVisual(row.display, row.screen),
+		&windows, 0,
+		BlackPixel(windows.display, windows.screen),
+		WhitePixel(windows.display, windows.screen),
+		NoEventMask, DefaultDepth(windows.display, windows.screen),
+		DefaultVisual(windows.display, windows.screen),
 		InputOutput
 	);
 
-	WM__createGraphicsContext(&row);
+	WM__createGraphicsContext(&windows, 0);
 
 	#ifdef _GUI_SUPPORT
-	WM__openDisplay(&cgui);
 	WM__createWindow(
-		&cgui,
-		WhitePixel(cgui.display, cgui.screen),
-		BlackPixel(cgui.display, cgui.screen),
+		&windows, 1,
+		WhitePixel(windows.display, windows.screen),
+		BlackPixel(windows.display, windows.screen),
 		KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
-		DefaultDepth(cgui.display, cgui.screen),
-		DefaultVisual(cgui.display, cgui.screen),
+		DefaultDepth(windows.display, windows.screen),
+		DefaultVisual(windows.display, windows.screen),
 		InputOutput
 	);
 	#endif
@@ -279,12 +282,12 @@ int main(int argc, char* argv[]) {
 	//
 	// Cleanup
 	//
-	WM__destroyWindow(&row);
-	WM__closeDisplay(&row);
+	WM__destroyWindow(&windows, 0);
+	WM__closeDisplay(&windows);
 
 	#ifdef _GUI_SUPPORT
-	WM__destroyWindow(&cgui);
-	WM__closeDisplay(&cgui);
+	WM__destroyWindow(&windows, 1);
+	WM__closeDisplay(&windows);
 	#endif
 
 	if(ENV_ret != 0) {
