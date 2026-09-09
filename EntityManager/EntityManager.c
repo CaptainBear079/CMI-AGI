@@ -50,7 +50,7 @@ void EM__init(EM* handler) {
 }
 
 void EM__createAIThread(EM* handler, unsigned int id, char* name) {
-	handler->entities[id] = malloc(sizeof(EM__Entity));
+	handler->entities[id] = malloc(sizeof(EM_Entity));
 	handler->entities[id]->id = id;
 	handler->entities[id]->name = name;
 }
