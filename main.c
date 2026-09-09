@@ -13,6 +13,7 @@
 
 // Modules
 #include "WindowManager/WindowManager.h" // Window Manager
+#include "EntityManager/EntityManager.h" // Entity Manager
 
 // Defines
 // - Argument bitmap
@@ -22,24 +23,30 @@
 
 // Global variables
 // - General system variables
-short args;                  // Argument bitmap
-FILE* script_fptr;           // Script file handle
-pthread_t env_thread_id;     // pthread_t for the environment thread
-pthread_t control_thread_id; // pthread_t for the control thread
-pthread_t *ai_thread_ids;    // Pointer to a dynamic array of pthread_t for AI threads
-int AIThreadCount;           // Number of AI threads
-int CTRL_ret;                // Return code of the control thread
-int ENV_ret;                 // Return code of the environment thread
-int* AI_ret = NULL;          // Pointer to a dynamic array of return codes for AI threads
-bool sim_shutdown = false;   // Shutdown signal for AI threads
-int return_code = 0;         // Shutdown signal to env_thread and control_thread
+short args;                             // Argument bitmap
+FILE* script_fptr;                      // Script file handle
+char* tempFolder = "./";                // TEMP folder
+char* sessionSave = "session.cmi_save"; // Session save file
+char* aiSave = "save.cmi_save";         // AI save file
+char* envSave = "save.cmi_save";        // Environment save file
+pthread_t env_thread_id;                // pthread_t for the environment thread
+pthread_t control_thread_id;            // pthread_t for the control thread
+pthread_t *ai_thread_ids;               // Pointer to a dynamic array of pthread_t for AI threads
+int AIThreadCount;                      // Number of AI threads
+int CTRL_ret;                           // Return code of the control thread
+int ENV_ret;                            // Return code of the environment thread
+int* AI_ret = NULL;                     // Pointer to a dynamic array of return codes for AI threads
+bool sim_shutdown = false;              // Shutdown signal for AI threads
+int return_code = 0;                    // Shutdown signal to env_thread and control_thread
 
 // Window Manager
 WM windows;
-
 // - Window data
 int rowWindowWidth = 1920;
 int rowWindowHeight = 1080;
+
+// Entity Manager
+EM entityManager;
 
 // System variables
 // - System messages variables
@@ -120,15 +127,16 @@ int control_function() {
 
 			// Start Simulation
 			case 9: {
-				ai_thread_ids = malloc(AIThreadCount * sizeof(pthread_t));
+				/*ai_thread_ids = malloc(AIThreadCount * sizeof(pthread_t));
 				for(int i = 0; i < AIThreadCount; i++) {
 					pthread_create(&ai_thread_ids[i], NULL, (void*)ai_thread, NULL);
-				}
+				}*/
+				EM__startSimulation(&entityManager);
 			} break;
 
 			// Kill Simulation
 			case 10: {
-				AI_ret = malloc(AIThreadCount * sizeof(int));
+				/*AI_ret = malloc(AIThreadCount * sizeof(int));
 				sim_shutdown = true;
 				for(int i = 0; i < AIThreadCount; i++) {
 					pthread_join(ai_thread_ids[i], (void**)&(AI_ret[i]));
@@ -138,7 +146,8 @@ int control_function() {
 						printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
 					}
 				}
-				free(AI_ret);
+				free(AI_ret);*/
+				EM__quitSimulation(&entityManager);
 			} break;
 
 			// Quit
@@ -153,6 +162,26 @@ int control_function() {
 	return -1; // Unexpected error
 }
 
+// INDEV
+void readSessionSave() {
+	char* temp;
+	strcpy(temp, tempFolder);
+	strcat(temp, sessionSave);
+	FILE* session_fptr = fopen(temp, "r");
+	char c[10];
+	c[9] = '\0';
+	for(int i = 0; i < 9; i++) {
+		c[i] = fgetc(session_fptr);
+	}
+	if(strcmp(&c, "[SESSION]") == 0) {
+		// Read env and ai
+		char c2[4];
+		c2[0] = fgetc(session_fptr);
+		c2[1] = fgetc(session_fptr);
+		c2[2] = fgetc(session_fptr);
+		c2[3] = '\0';
+	}
+}
 
 // Control thread
 int main(int argc, char* argv[]) {
@@ -178,6 +207,14 @@ int main(int argc, char* argv[]) {
 			args = args | CMI__ARG_GUI_MODE;
 		}
 	}
+	if(args & CMI__ARG_RESTORE_SESSION) {
+		readSessionSave(); // INDEV
+	}
+
+	printf("[Setup]: Preparing entity manager...\n");
+	// - Prepare entity manager
+	EM__init(&entityManager);
+	if(args & CMI__ARG_RESTORE_SESSION) {}
 
 	printf("[Setup]: Preparing window(s)...\n");
 	// - Prepare windows (control window GUI mode only)
