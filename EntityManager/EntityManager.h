@@ -1,7 +1,12 @@
 #pragma once
+// Includes
 #include <Fast3D/Fast3D.h>
+#include "./../plugin.h"
 
-#define EM_EVENT_EMPTY 0
+// Defines
+#define EM_ENTITY__TYPE_CPLUGIN 0
+#define EM_ENTITY__TYPE_ENTITY_ENGINE 1
+/*#define EM_EVENT_EMPTY 0
 #define EM_EVENT_SHUTDOWN 1
 
 typedef struct _EM_Event_ {
@@ -31,36 +36,26 @@ typedef struct _EM_Ex_Touch_Signal_ {
 typedef struct _EM_Vision_ {
 	uint32_t* FullVision;
 	uint32_t* eyes;
-} EM_Vision;
+} EM_Vision;*/
 
 typedef struct _EM_Entity_ {
-	char* name;
-	unsigned int id;
-	//
-	// Touch variables
-	Vertex *NerveEndings;                          // All nerve endings
-	int TSBIndex;                                  // Current index of the touch signal buffer
-	int TSBFirstFreeIndex;                         // First free/unused touch signal buffer index
-	union {
-	// - Basic Touch Variables
-	EM_Basic_Touch_Signal* BasicTouchSignalBuffer; // Basic touch signal buffer
-	// - Extended Touch Variables
-	EM_Ex_Touch_Signal* ExTouchSignalBuffer;       // Extended touch signal buffer
-	} TouchSignalBuffer;
-	// Noise variables
-	// Vision variables
-	EM_Vision vision;                              // Vision
-	// Telepathic communication
-	int channel;                                   // Which telepathic text output is used
-	char msg[1025];                                // Telepathic text output
+	char* name;        // Entity name
+	unsigned int id;   // Unique ID for the Entity
+	unsigned int type; // Entity AI type (C plugin/Entity Engine)
+	char* path;        // The path to the C Plugin/Entity Engine script
 } EM_Entity;
 
 typedef struct _EM_ {
-	EM_Entity* entities;
-	int entityCount;
-	EM_Event* events;
-	int eventIndex;
+	unsigned long long tick;     // Primary clock
+	unsigned long long tickYear; // Secondary clock
+	EM_Entity** entities;        // Entities (AIs)
+	int entityCount;             // Entity count
+	/*EM_Event* events;
+	int eventIndex;*/
+	bool simShutdown;            // Simulation shutdown signal
+	int** entityRetCodes;        // Entity return codes
 } EM;
 
-void EM__createAIThread(EM* handler);
+void EM__init(EM* handler);
+void EM__createAIThread(EM* handler, unsigned int id, char* name);
 void EM__startSimulation(EM* handler);
