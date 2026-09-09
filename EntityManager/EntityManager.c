@@ -56,3 +56,5 @@ void EM__createAIThread(EM* handler, unsigned int id, char* name) {
 }
 
 void EM__startSimulation(EM* handler) {}
+
+void EM__quitSimulation(EM* handler) {}

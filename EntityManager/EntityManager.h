@@ -1,7 +1,7 @@
 #pragma once
 // Includes
 #include <Fast3D/Fast3D.h>
-#include "./../plugin.h"
+
 
 // Defines
 #define EM_ENTITY__TYPE_CPLUGIN 0
@@ -56,6 +56,9 @@ typedef struct _EM_ {
 	int** entityRetCodes;        // Entity return codes
 } EM;
 
+#include "../plugin.h"
+
 void EM__init(EM* handler);
 void EM__createAIThread(EM* handler, unsigned int id, char* name);
 void EM__startSimulation(EM* handler);
+void EM__quitSimulation(EM* handler);
