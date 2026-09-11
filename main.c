@@ -162,27 +162,6 @@ int control_function() {
 	return -1; // Unexpected error
 }
 
-// INDEV
-void readSessionSave() {
-	char* temp = malloc(sizeof(tempFolder) * sizeof(char));
-	strcpy(temp, tempFolder);
-	strcat(temp, sessionSave);
-	FILE* session_fptr = fopen(temp, "r");
-	char c[10];
-	c[9] = '\0';
-	for(int i = 0; i < 9; i++) {
-		c[i] = fgetc(session_fptr);
-	}
-	if(strcmp(c, "[SESSION]") == 0) {
-		// Read env and ai
-		char c2[4];
-		c2[0] = fgetc(session_fptr);
-		c2[1] = fgetc(session_fptr);
-		c2[2] = fgetc(session_fptr);
-		c2[3] = '\0';
-	}
-}
-
 // Control thread
 int main(int argc, char* argv[]) {
 	//
