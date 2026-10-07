@@ -6,12 +6,8 @@ short args;                             // Argument bitmap
 Save save;                              // Save file data
 pthread_t env_thread_id;                // pthread_t for the environment thread
 pthread_t control_thread_id;            // pthread_t for the control thread
-pthread_t *ai_thread_ids;               // Pointer to a dynamic array of pthread_t for AI threads
-int AIThreadCount;                      // Number of AI threads
 int CTRL_ret;                           // Return code of the control thread
 int ENV_ret;                            // Return code of the environment thread
-int* AI_ret = NULL;                     // Pointer to a dynamic array of return codes for AI threads
-bool sim_shutdown = false;              // Shutdown signal for AI threads
 int return_code = 0;                    // Shutdown signal to env_thread and control_thread
 
 // Window Manager
@@ -94,37 +90,14 @@ int control_function() {
 			case 8: {} break;
 
 			// Start Simulation
-			case 9: {
-				/*ai_thread_ids = malloc(AIThreadCount * sizeof(pthread_t));
-				for(int i = 0; i < AIThreadCount; i++) {
-					pthread_create(&ai_thread_ids[i], NULL, (void*)ai_thread, NULL);
-				}*/
-				EM__startSimulation(&entityManager);
-			} break;
+			case 9: { EM__startSimulation(&entityManager); } break;
 
 			// Kill Simulation
-			case 10: {
-				/*AI_ret = malloc(AIThreadCount * sizeof(int));
-				sim_shutdown = true;
-				for(int i = 0; i < AIThreadCount; i++) {
-					pthread_join(ai_thread_ids[i], (void**)&(AI_ret[i]));
-				}
-				for(int i = 0; i < AIThreadCount; i++) {
-					if(AI_ret[i] != 0) {
-						printf("[AI:%d]: Exit code: %d\n", i, AI_ret[i]);
-					}
-				}
-				free(AI_ret);*/
-				EM__quitSimulation(&entityManager);
-			} break;
+			case 10: { EM__quitSimulation(&entityManager); } break;
 
 			// Quit
-			case 11: {
-				return 0;
-			} break;
-			default: {
-				printf("Invalid command.\n");
-			} break;
+			case 11: { return 0; } break;
+			default: { printf("Invalid command.\n"); } break;
 		}
 	}
 	return -1; // Unexpected error
@@ -152,8 +125,7 @@ int main(int argc, char* argv[]) {
 
 	printf("[Setup]: Preparing entity manager...\n");
 	// - Prepare entity manager
-	EM__init(&entityManager);
-	if(args & CMI__ARG_RESTORE_SESSION) {}
+	EM__init(&entityManager, (args & CMI__ARG_GUI_MODE));
 
 	printf("[Setup]: Preparing window(s)...\n");
 	// - Prepare windows (control window GUI mode only)

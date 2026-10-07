@@ -1,5 +1,7 @@
 #pragma once
 // Includes
+#include <stdlib.h>
+#include <pthread.h>
 #include <Fast3D/Fast3D.h>
 
 
@@ -39,6 +41,7 @@ typedef struct _EM_Vision_ {
 } EM_Vision;*/
 
 typedef struct _EM_Entity_ {
+	pthread_t* thread;
 	char* name;        // Entity name
 	unsigned int id;   // Unique ID for the Entity
 	unsigned int type; // Entity AI type (C plugin/Entity Engine)
@@ -52,13 +55,14 @@ typedef struct _EM_ {
 	int entityCount;             // Entity count
 	/*EM_Event* events;
 	int eventIndex;*/
-	bool simShutdown;            // Simulation shutdown signal
+	bool simActive;              // Simulation state flag
 	int** entityRetCodes;        // Entity return codes
+	bool printExitCodes;         // Exit code printing flag
 } EM;
 
 #include "../plugin.h"
 
-void EM__init(EM* handler);
-void EM__createAIThread(EM* handler, unsigned int id, char* name);
+void EM__init(EM* handler, bool printExitCodes);
+void EM__createAIThread(EM* handler, unsigned int id, char* name, unsigned int type, char* path);
 void EM__startSimulation(EM* handler);
 void EM__quitSimulation(EM* handler);

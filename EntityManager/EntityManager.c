@@ -23,6 +23,7 @@ void* EntityThread(void* arg) {
 
 		// Set up Plugin Interface
 		PluginInterface PI;
+		PI.entity = (void*)em->entities[*id];
 
 		// Run AI
 		*retCode = _CPlugin(&PI);
@@ -41,20 +42,49 @@ void* EntityThread(void* arg) {
 	return retCode;
 }
 
-void EM__init(EM* handler) {
+void EM__init(EM* handler, bool printExitCodes) {
 	handler->tick = 0;
 	handler->tickYear = 0;
 	handler->entities = NULL;
 	handler->entityCount = 0;
+	handler->entityRetCodes = malloc(handler->entityCount * sizeof(int*));
+	handler->printExitCodes = printExitCodes;
 	return;
 }
 
-void EM__createAIThread(EM* handler, unsigned int id, char* name) {
-	handler->entities[id] = malloc(sizeof(EM_Entity));
-	handler->entities[id]->id = id;
-	handler->entities[id]->name = name;
+int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type, char* path) {
+	if(handler->simActive) {
+		return 1;
+	}
+	else {
+		handler->entities[id] = malloc(sizeof(EM_Entity));
+		handler->entities[id]->id = id;
+		handler->entities[id]->name = name;
+		handler->entities[id]->type = type;
+		handler->entities[id]->path = path;
+	}
+	return 0;
 }
 
-void EM__startSimulation(EM* handler) {}
+void EM__startSimulation(EM* handler) {
+	handler->simActive = true;
+	for(int i = 0; i < handler->entityCount; i++) {
+		handler->entities[i]->thread = malloc(sizeof(pthread_t));
+		void* arg = malloc(sizeof(EM) + sizeof(int));
+		memcpy(arg, handler, sizeof(EM));
+		memcpy(arg + sizeof(EM), &(handler->entities[i]->id), sizeof(int));
+		pthread_create(handler->entities[i]->thread, NULL, (void*)EntityThread, arg);
+	}
+}
 
-void EM__quitSimulation(EM* handler) {}
+void EM__quitSimulation(EM* handler) {
+	for(int i = 0; i < handler->entityCount; i++) {
+		pthread_join(*(handler->entities[i]->thread), (void**)&(handler->entityRetCodes[i]));
+	}
+	handler->simActive = false;
+	if(handler->printExitCodes) {
+		for(int i = 0; i < handler->entityCount; i++) {
+			printf("[Entity:%d]: Exit code: %d\n", i, *(handler->entityRetCodes[i]));
+		}
+	}
+}
