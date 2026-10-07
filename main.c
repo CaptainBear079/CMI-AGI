@@ -20,10 +20,6 @@ WM windows;
 // Entity Manager
 EM entityManager;
 
-// System variables
-// - System messages variables
-char* msg[10][256];                 // System messages (up to 255 characters (plus NULL), 10 messages)
-
 // 3D environment_thread
 void* env_thread(void* arg) {
 	init_cube();
