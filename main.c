@@ -1,34 +1,9 @@
-// Includes
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <pthread.h>
-#include <unistd.h>
-
-// Libraries
-#include <Fast3D/Fast3D.h> // Fast3D library (Chaos Code Project 3D engine)
-#include "Fast3D/cube.h"          // TEMP: Cube model (for testing and later use as template)
-
-// Modules
-#include "WindowManager/WindowManager.h" // Window Manager
-#include "EntityManager/EntityManager.h" // Entity Manager
-
-// Defines
-// - Argument bitmap
-#define CMI__ARG_RESTORE_SESSION 1
-#define CMI__ARG_GUI_MODE 2
-#define CMI__ARG_SCRIPT 4
+#include "main.h"
 
 // Global variables
 // - General system variables
 short args;                             // Argument bitmap
-FILE* script_fptr;                      // Script file handle
-char* tempFolder = "./";                // TEMP folder
-char* sessionSave = "session.cmi_save"; // Session save file
-char* aiSave = "save.cmi_save";         // AI save file
-char* envSave = "save.cmi_save";        // Environment save file
+Save save;                              // Save file data
 pthread_t env_thread_id;                // pthread_t for the environment thread
 pthread_t control_thread_id;            // pthread_t for the control thread
 pthread_t *ai_thread_ids;               // Pointer to a dynamic array of pthread_t for AI threads
@@ -41,9 +16,6 @@ int return_code = 0;                    // Shutdown signal to env_thread and con
 
 // Window Manager
 WM windows;
-// - Window data
-int rowWindowWidth = 1920;
-int rowWindowHeight = 1080;
 
 // Entity Manager
 EM entityManager;
@@ -55,7 +27,7 @@ char* msg[10][256];                 // System messages (up to 255 characters (pl
 // 3D environment_thread
 void* env_thread(void* arg) {
 	init_cube();
-	Renderer* renderer = Fast3D__init(rowWindowWidth, rowWindowHeight, 90.0);
+	Renderer* renderer = Fast3D__init(CMI__WINDOW_WIDTH, CMI__WINDOW_HEIGHT, 90.0);
 	Fast3D__addMesh(renderer, &cube);
 	WM__createImage(&windows, 0, renderer->fb);
 	while(return_code == 0) {
@@ -174,20 +146,12 @@ int main(int argc, char* argv[]) {
 			args = args | CMI__ARG_RESTORE_SESSION;
 			break;
 		}
-		else if(strcmp("-s", argv[i]) == 0) {
-			args = args | CMI__ARG_SCRIPT;
-			script_fptr = fopen(argv[i + 1], "r");
-			if(script_fptr == NULL) {
-				fprintf(stderr, "[Setup]: \"-s\": Script couldn't be opened. Error Code: 0x0001\n");
-				return 1;
-			}
-		}
 		else if(strcmp("-gui", argv[i]) == 0) {
 			args = args | CMI__ARG_GUI_MODE;
 		}
 	}
 	if(args & CMI__ARG_RESTORE_SESSION) {
-		readSessionSave(); // INDEV
+		loadSave(&save); // INDEV
 	}
 
 	printf("[Setup]: Preparing entity manager...\n");
@@ -213,8 +177,8 @@ int main(int argc, char* argv[]) {
 	windows.windows[0].windowBorderWidth = 5;
 	#endif
 
-	windows.windows[0].windowWidth = rowWindowWidth;
-	windows.windows[0].windowHeight = rowWindowHeight;
+	windows.windows[0].windowWidth = CMI__WINDOW_WIDTH;
+	windows.windows[0].windowHeight = CMI__WINDOW_HEIGHT;
 	
 	WM__createWindow(
 		&windows, 0,
@@ -228,8 +192,8 @@ int main(int argc, char* argv[]) {
 	WM__createGraphicsContext(&windows, 0);
 
 	#ifdef _GUI_SUPPORT
-	windows.windows[1].windowWidth = rowWindowWidth;
-	windows.windows[1].windowHeight = rowWindowHeight;
+	windows.windows[1].windowWidth = CMI__WINDOW_WIDTH;
+	windows.windows[1].windowHeight = CMI__WINDOW_HEIGHT;
 	WM__createWindow(
 		&windows, 1,
 		WhitePixel(windows.display, windows.screen),
