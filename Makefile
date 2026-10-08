@@ -3,7 +3,7 @@ CFLAGS = -g -Wall -Wextra -fPIC -I.
 LIB_NAME = libFast3D.so
 LIB_SRC = ./Fast3D/Fast3D.c
 MODEL_NAME = dev-test-v0.0.1.so
-MODEL_SRC = ./AIModels/dev-test-v0.0.1/de-test-v0.0.1.c
+MODEL_SRC = ./AIModels/dev-test-v0.0.1/dev-test-v0.0.1.c
 NAME = cmi-agi
 BUILD_DIR = ./build
 
