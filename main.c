@@ -2,13 +2,11 @@
 
 // Global variables
 // - General system variables
-short args;                             // Argument bitmap
+short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 pthread_t env_thread_id;                // pthread_t for the environment thread
-pthread_t control_thread_id;            // pthread_t for the control thread
-int CTRL_ret;                           // Return code of the control thread
-int ENV_ret;                            // Return code of the environment thread
-int return_code = 0;                    // Shutdown signal to env_thread and control_thread
+int ENV_ret = 0;                        // Return code of the environment thread
+bool exitFlag = false;                  // Shutdown signal to env_thread and control_thread
 
 // Window Manager
 WM windows;
@@ -22,7 +20,7 @@ void* env_thread(void* arg) {
 	Renderer* renderer = Fast3D__init(CMI__WINDOW_WIDTH, CMI__WINDOW_HEIGHT, 90.0);
 	Fast3D__addMesh(renderer, &cube);
 	WM__createImage(&windows, 0, renderer->fb);
-	while(return_code == 0) {
+	while(!exitFlag) {
 		Fast3D__render(renderer);
 
 		WM__updateImage(&windows, 0);
@@ -34,33 +32,27 @@ void* env_thread(void* arg) {
 	return NULL; // Shutdown via exit code signal
 }
 
-// Control thread
-void *control_thread(void* arg) {
-	while(return_code == 0) {
-		#ifdef _W_X11
-		XEvent ev;
-
-		while(XNextEvent(windows.display, &ev) == 0) {
-			switch(ev.type) {
-				case ButtonPress: {
-					CTRL_ret = 0;
-					return NULL;
-				} break;
-			}
-		}
-		#endif
-		usleep(1000);
-	}
-	CTRL_ret = 0;
-	return NULL;
-}
-
 // Control function
 int control_function() {
 	// Variables
 	int command = 0;
+	#if defined(_WM_STD__X11) && defined(_GUI_SUPPORT)
+	XEvent ev;
+
+	while(XNextEvent(windows.display, &ev) == 0) {
+	#else
 	while(true) {
+	#endif
 		usleep(10000);
+		#ifdef _W_X11
+
+		switch(ev.type) {
+			case ButtonPress: {
+				return 0;
+			} break;
+		}
+		#endif
+
 		switch(command){
 			// No command
 			case 0: break;
@@ -176,15 +168,12 @@ int main(int argc, char* argv[]) {
 	printf("[Setup]: Starting 3D environment...\n");
 	pthread_create(&env_thread_id, NULL, (void*)env_thread, NULL);
 
-	printf("[Setup]: Starting control thread...\n");
-	pthread_create(&control_thread_id, NULL, (void*)control_thread, NULL);
-
 	//
 	// Main loop
 	//
 	printf("Setup complete.\n");
-	return_code = control_function();
-	pthread_join(control_thread_id, NULL);
+	int exitCode = control_function();
+	exitFlag = true;
 	pthread_join(env_thread_id, NULL);
 
 	//
@@ -196,12 +185,7 @@ int main(int argc, char* argv[]) {
 	#endif
 	WM__closeDisplay(&windows);
 
-	if(ENV_ret != 0) {
-		printf("[Environment]: Exit code: %d\n", ENV_ret);
-	}
-	if(CTRL_ret != 0) {
-		printf("[Control Thread]: Exit code: %d\n", CTRL_ret);
-	}
-	printf("[Controller]: Exit code: %d\n", return_code);
-	return return_code;
+	printf("[Environment]: Exit code: %d\n", ENV_ret);
+	printf("[Controller]: Exit code: %d\n", exitCode);
+	return exitCode;
 }
