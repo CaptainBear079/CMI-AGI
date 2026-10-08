@@ -4,8 +4,11 @@
 // - General system variables
 short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
+int commands[5];                       // Command queue
 pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
+pthread_t ctrl_thread_id;               // pthread_t for the control thread
+int CTRL_ret = 0;                       // Return code of the control thread
 bool exitFlag = false;                  // Shutdown signal to env_thread and control_thread
 
 // Window Manager
@@ -32,28 +35,36 @@ void* env_thread(void* arg) {
 	return NULL; // Shutdown via exit code signal
 }
 
+// Control GUI thread
+#ifdef _GUI_SUPPORT
+void* control_thread(void* arg) {
+	#ifdef _W_X11
+	XEvent ev;
+	while(XNextEvent(windows.display, &ev) == 0 && !exitFlag) {
+		switch(ev.type) {
+			case ButtonPress: {
+				CTRL_ret = 0;
+				return NULL;
+			} break;
+		}
+	}
+	#endif
+	CTRL_ret = 0;
+	return NULL;
+}
+#endif
+
 // Control function
 int control_function() {
 	// Variables
 	int command = 0;
-	#if defined(_WM_STD__X11) && defined(_GUI_SUPPORT)
-	XEvent ev;
+	int i = 0;
 
-	while(XNextEvent(windows.display, &ev) == 0) {
-	#else
 	while(true) {
-	#endif
 		usleep(10000);
-		#ifdef _W_X11
 		if(args & CMI__ARG_GUI_MODE) {
-			switch(ev.type) {
-				case ButtonPress: {
-					return 0;
-				} break;
-			}
+			command = commands[i];
 		}
-		#endif
-
 		switch(command){
 			// No command
 			case 0: break;
@@ -92,6 +103,12 @@ int control_function() {
 			case 11: { return 0; } break;
 			default: { printf("Invalid command.\n"); } break;
 		}
+		if(args & CMI__ARG_GUI_MODE) {
+			commands[i] = 0;
+		}
+		if(i >= 5) {
+			i = 0;
+		}
 	}
 	return -1; // Unexpected error
 }
@@ -106,7 +123,6 @@ int main(int argc, char* argv[]) {
 	for(int i = 1; i < argc; i++) {
 		if(strcmp("--restore", argv[i]) == 0) {
 			args = args | CMI__ARG_RESTORE_SESSION;
-			break;
 		}
 		else if(strcmp("-gui", argv[i]) == 0) {
 			args = args | CMI__ARG_GUI_MODE;
@@ -174,16 +190,28 @@ int main(int argc, char* argv[]) {
 	}
 	#endif
 
-	printf("[Setup]: Starting 3D environment...\n");
+	printf("[Setup]: Starting 3D environment... ");
 	pthread_create(&env_thread_id, NULL, (void*)env_thread, NULL);
+	if(args & CMI__ARG_GUI_MODE) {
+		printf("Started!\n[Setup]: Starting control thread... ");
+		pthread_create(&ctrl_thread_id, NULL, (void*)control_thread, NULL);
+		printf("Started!\n");
+	}
+	else {
+		printf("Started!\n");
+	}
+	
+	printf("Setup complete.\n");
 
 	//
 	// Main loop
 	//
-	printf("Setup complete.\n");
 	int exitCode = control_function();
 	exitFlag = true;
 	pthread_join(env_thread_id, NULL);
+	if(args & CMI__ARG_GUI_MODE) {
+		pthread_join(ctrl_thread_id, NULL);
+	}
 
 	//
 	// Cleanup
@@ -197,6 +225,9 @@ int main(int argc, char* argv[]) {
 	WM__closeDisplay(&windows);
 
 	printf("[Environment]: Exit code: %d\n", ENV_ret);
+	if(args & CMI__ARG_GUI_MODE) {
+		printf("[GUI Control]: Exit code: %d\n", CTRL_ret);
+	}
 	printf("[Controller]: Exit code: %d\n", exitCode);
 	return exitCode;
 }
