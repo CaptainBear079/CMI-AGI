@@ -114,5 +114,10 @@ int loadSave(Save* save) {
 		return -1;
 	if(parseSave(save, tokens, tokenCount) != 0)
 		return -1;
+	
+	// Clean up
+	for(int i = 0; i < tokenCount; i++) {
+		free(tokens[i].text);
+	}
 	return 0;
 }
