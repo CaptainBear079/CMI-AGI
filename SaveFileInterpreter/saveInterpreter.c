@@ -65,9 +65,11 @@ int readSave(char* save, Token* tokens, int* tokenCount) {
 	fclose(saveFile);
 
 	// DEBUG
+	#ifdef _DEBUG
 	for(int i = 0; i < *tokenCount; i++) {
-		printf("Token: %d, Type: %d, Text: %s\n", i, tokens[i].type, tokens[i].text);
+		printf("DEBUG: Token: %d, Type: %d, Text: %s\n", i, tokens[i].type, tokens[i].text);
 	}
+	#endif
 	return 0;
 }
 
