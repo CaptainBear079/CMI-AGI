@@ -22,5 +22,17 @@
 #define CMI__ARG_GUI_MODE 2
 #define CMI__ARG_SCRIPT 4
 // - Window standard values
-#define CMI__WINDOW_WIDTH 1920
-#define CMI__WINDOW_HEIGHT 1080
+//   - Environment
+#define CMI__ENV_WINDOW_WIDTH 1920
+#define CMI__ENV_WINDOW_HEIGHT 1080
+//#define CMI__ENV_WINDOW_HEIGHT_GUI 720
+#define CMI__ENV_WINDOW_HEIGHT_GUI 648
+#define CMI__ENV_WINDOW_POS_X 0
+#define CMI__ENV_WINDOW_POS_Y 0
+//   - Control
+#define CMI__CTRL_WINDOW_WIDTH 1920
+//#define CMI__CTRL_WINDOW_HEIGHT 360
+#define CMI__CTRL_WINDOW_HEIGHT 325
+//#define CMI__CTRL_WINDOW_POS_X 720
+#define CMI__CTRL_WINDOW_POS_X 755
+#define CMI__CTRL_WINDOW_POS_Y 0

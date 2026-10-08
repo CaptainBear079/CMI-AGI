@@ -20,7 +20,7 @@ EM entityManager;
 // 3D environment_thread
 void* env_thread(void* arg) {
 	init_cube();
-	Renderer* renderer = Fast3D__init(CMI__WINDOW_WIDTH, CMI__WINDOW_HEIGHT, 90.0);
+	Renderer* renderer = Fast3D__init(CMI__ENV_WINDOW_WIDTH, CMI__ENV_WINDOW_HEIGHT, 90.0);
 	Fast3D__addMesh(renderer, &cube);
 	WM__createImage(&windows, 0, renderer->fb);
 	while(!exitFlag) {
@@ -43,6 +43,7 @@ void* control_thread(void* arg) {
 	while(XNextEvent(windows.display, &ev) == 0 && !exitFlag) {
 		switch(ev.type) {
 			case ButtonPress: {
+				commands[0] = 11;
 				CTRL_ret = 0;
 				return NULL;
 			} break;
@@ -160,8 +161,15 @@ int main(int argc, char* argv[]) {
 	}
 	#endif
 
-	windows.windows[0].windowWidth = CMI__WINDOW_WIDTH;
-	windows.windows[0].windowHeight = CMI__WINDOW_HEIGHT;
+	windows.windows[0].windowX = CMI__ENV_WINDOW_POS_X;
+	windows.windows[0].windowY = CMI__ENV_WINDOW_POS_Y;
+	windows.windows[0].windowWidth = CMI__ENV_WINDOW_WIDTH;
+	if(args & CMI__ARG_GUI_MODE) {
+		windows.windows[0].windowHeight = CMI__ENV_WINDOW_HEIGHT_GUI;
+	}
+	else {
+		windows.windows[0].windowHeight = CMI__ENV_WINDOW_HEIGHT;
+	}
 	
 	WM__createWindow(
 		&windows, 0,
@@ -176,8 +184,10 @@ int main(int argc, char* argv[]) {
 
 	#ifdef _GUI_SUPPORT
 	if(args & CMI__ARG_GUI_MODE) {
-		windows.windows[1].windowWidth = CMI__WINDOW_WIDTH;
-		windows.windows[1].windowHeight = CMI__WINDOW_HEIGHT;
+		windows.windows[1].windowX = CMI__CTRL_WINDOW_POS_X;
+		windows.windows[1].windowY = CMI__CTRL_WINDOW_POS_Y;
+		windows.windows[1].windowWidth = CMI__CTRL_WINDOW_WIDTH;
+		windows.windows[1].windowHeight = CMI__CTRL_WINDOW_HEIGHT;
 		WM__createWindow(
 			&windows, 1,
 			WhitePixel(windows.display, windows.screen),
