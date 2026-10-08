@@ -1,11 +1,11 @@
 #include "saveInterpreter.h"
 
-int readSave(char* save, Token* tokens, int* tokenCount) {
+int readSave(char* save, Token** tokens, int* tokenCount) {
 	// Variables
 	char c;
 	char buffer[256];
 	int bIndex = 0;
-	tokens = malloc(512 * sizeof(Token));
+	*tokens = malloc(512 * sizeof(Token));
 
 	// Open save file
 	FILE* saveFile = fopen(save, "r");
@@ -23,10 +23,10 @@ int readSave(char* save, Token* tokens, int* tokenCount) {
 			case (int)'\n': {
 				if(bIndex > 0) {
 					buffer[bIndex] = '\0';
-					tokens[*tokenCount].text = malloc(bIndex * sizeof(char));
-					strcpy(tokens[*tokenCount].text, buffer);
-					tokens[*tokenCount].type = TOKEN__TEXT;
-					tokens[*tokenCount].textLength = bIndex + 1;
+					(*tokens)[*tokenCount].text = malloc(bIndex * sizeof(char));
+					strcpy((*tokens)[*tokenCount].text, buffer);
+					(*tokens)[*tokenCount].type = TOKEN__TEXT;
+					(*tokens)[*tokenCount].textLength = bIndex + 1;
 					(*tokenCount)++;
 					bIndex = 0;
 				}
@@ -36,22 +36,22 @@ int readSave(char* save, Token* tokens, int* tokenCount) {
 			case (int)':': {
 				if(bIndex > 0) {
 					buffer[bIndex] = '\0';
-					tokens[*tokenCount].text = malloc(bIndex * sizeof(char));
-					strcpy(tokens[*tokenCount].text, buffer);
-					tokens[*tokenCount].type = TOKEN__TEXT;
-					tokens[*tokenCount].textLength = bIndex + 1;
+					(*tokens)[*tokenCount].text = malloc(bIndex * sizeof(char));
+					strcpy((*tokens)[*tokenCount].text, buffer);
+					(*tokens)[*tokenCount].type = TOKEN__TEXT;
+					(*tokens)[*tokenCount].textLength = bIndex + 1;
 					(*tokenCount)++;
 					bIndex = 0;
 				}
 
 				if(c == ':') {
-					tokens[*tokenCount].type = TOKEN__GROUP;
+					(*tokens)[*tokenCount].type = TOKEN__GROUP;
 				}
 				else {
-					tokens[*tokenCount].type = TOKEN__META_INFO;
+					(*tokens)[*tokenCount].type = TOKEN__META_INFO;
 				}
-				tokens[*tokenCount].text = NULL;
-				tokens[*tokenCount].textLength = 0;
+				(*tokens)[*tokenCount].text = NULL;
+				(*tokens)[*tokenCount].textLength = 0;
 				(*tokenCount)++;
 			} break;
 			default: {
@@ -67,7 +67,7 @@ int readSave(char* save, Token* tokens, int* tokenCount) {
 	// DEBUG
 	#ifdef _DEBUG
 	for(int i = 0; i < *tokenCount; i++) {
-		printf("DEBUG: Token: %d, Type: %d, Text: %s\n", i, tokens[i].type, tokens[i].text);
+		printf("DEBUG: Token: %d, Type: %d, Text: %s\n", i, (*tokens)[i].type, (*tokens)[i].text);
 	}
 	#endif
 	return 0;
@@ -112,7 +112,7 @@ int loadSave(Save* save) {
 	Token* tokens;
 	int tokenCount = 0;
 	// Load session save
-	if(readSave("./TEMPLATES/session.cmi_save", tokens, &tokenCount) != 0)
+	if(readSave("./TEMPLATES/session.cmi_save", &tokens, &tokenCount) != 0)
 		return -1;
 	if(parseSave(save, tokens, tokenCount) != 0)
 		return -1;
