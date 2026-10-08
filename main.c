@@ -45,11 +45,12 @@ int control_function() {
 	#endif
 		usleep(10000);
 		#ifdef _W_X11
-
-		switch(ev.type) {
-			case ButtonPress: {
-				return 0;
-			} break;
+		if(args & CMI__ARG_GUI_MODE) {
+			switch(ev.type) {
+				case ButtonPress: {
+					return 0;
+				} break;
+			}
 		}
 		#endif
 
@@ -131,10 +132,16 @@ int main(int argc, char* argv[]) {
 	#ifdef _GUI_SUPPORT
 	windows.windows = calloc(2, sizeof(WM__Window));
 	windows.windows[0].windowBorderWidth = 5;
-	windows.windows[1].windowBorderWidth = 5;
+	if(args & CMI__ARG_GUI_MODE) {
+		windows.windows[1].windowBorderWidth = 5;
+	}
 	#else
 	windows.windows = calloc(1, sizeof(WM__Window));
 	windows.windows[0].windowBorderWidth = 5;
+	if(args & CMI__ARG_GUI_MODE) {
+		printf("[Setup]: GUI mode is not supported in this build.\n");
+		return 1;
+	}
 	#endif
 
 	windows.windows[0].windowWidth = CMI__WINDOW_WIDTH;
@@ -152,17 +159,19 @@ int main(int argc, char* argv[]) {
 	WM__createGraphicsContext(&windows, 0);
 
 	#ifdef _GUI_SUPPORT
-	windows.windows[1].windowWidth = CMI__WINDOW_WIDTH;
-	windows.windows[1].windowHeight = CMI__WINDOW_HEIGHT;
-	WM__createWindow(
-		&windows, 1,
-		WhitePixel(windows.display, windows.screen),
-		BlackPixel(windows.display, windows.screen),
-		KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
-		DefaultDepth(windows.display, windows.screen),
-		DefaultVisual(windows.display, windows.screen),
-		InputOutput
-	);
+	if(args & CMI__ARG_GUI_MODE) {
+		windows.windows[1].windowWidth = CMI__WINDOW_WIDTH;
+		windows.windows[1].windowHeight = CMI__WINDOW_HEIGHT;
+		WM__createWindow(
+			&windows, 1,
+			WhitePixel(windows.display, windows.screen),
+			BlackPixel(windows.display, windows.screen),
+			KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
+			DefaultDepth(windows.display, windows.screen),
+			DefaultVisual(windows.display, windows.screen),
+			InputOutput
+		);
+	}
 	#endif
 
 	printf("[Setup]: Starting 3D environment...\n");
@@ -181,7 +190,9 @@ int main(int argc, char* argv[]) {
 	//
 	WM__destroyWindow(&windows, 0);
 	#ifdef _GUI_SUPPORT
-	WM__destroyWindow(&windows, 1);
+	if(args & CMI__ARG_GUI_MODE) {
+		WM__destroyWindow(&windows, 1);
+	}
 	#endif
 	WM__closeDisplay(&windows);
 
