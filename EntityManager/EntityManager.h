@@ -46,6 +46,7 @@ typedef struct _EM_Entity_ {
 	unsigned int id;   // Unique ID for the Entity
 	unsigned int type; // Entity AI type (C plugin/Entity Engine)
 	char* path;        // The path to the C Plugin/Entity Engine script
+	void* data;        // Save data
 } EM_Entity;
 
 typedef struct _EM_ {
