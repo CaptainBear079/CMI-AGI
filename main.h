@@ -6,6 +6,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 // Libraries
 #include <Fast3D/Fast3D.h> // Fast3D library (Chaos Code Project 3D engine)
