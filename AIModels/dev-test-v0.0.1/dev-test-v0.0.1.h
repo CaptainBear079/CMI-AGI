@@ -26,6 +26,9 @@ typedef struct _Neuron_ {
     double V_threshold; // Membrane threshold
     double V_rest;      // Membrane resting potential
     double V_reset;     // Membrane reset potential
+    clock_t now, then;  // Delta time variables
+    double restTime;    // Reset time
+    bool resetFlag;     // Reset flag
 } Neuron;
 
 typedef struct _NeuralNetwork_ {
