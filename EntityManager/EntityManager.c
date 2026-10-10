@@ -54,14 +54,18 @@ void EM__init(EM* handler, bool printExitCodes) {
 
 int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type, char* path) {
 	if(handler->simActive) {
+		printf("[Entity Manager] Simulation is currently running.\n");
 		return 1;
 	}
 	else {
+		printf("[Entity Manager] Creating entity...");
 		handler->entities[id] = malloc(sizeof(EM_Entity));
 		handler->entities[id]->id = id;
 		handler->entities[id]->name = name;
 		handler->entities[id]->type = type;
 		handler->entities[id]->path = path;
+		handler->entityCount++;
+		printf(" Success!\n");
 	}
 	return 0;
 }

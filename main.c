@@ -135,7 +135,9 @@ int control_function() {
 				} break;
 
 				// Create AI
-				case 1: {} break;
+				case 1: {
+					EM__createEntity(&entityManager, entityManager.entityCount, "Test 1", EM_ENTITY__TYPE_CPLUGIN, "./build/dev-test-v0.0.1.so");
+				} break;
 
 				// Import AI
 				case 2: {} break;
