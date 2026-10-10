@@ -105,6 +105,11 @@ int control_function() {
 	printf("\n$ ");
 	fflush(stdout);
 	while(!exitFlag) {
+		// Reset buffer
+		for(int i = 0; i < 256; i++) {
+			buffer[i] = '\0';
+		}
+		
 		// Check for stdin input
 		cmd_copy = cmd;
 		if(select(STDIN_FILENO + 1, &cmd_copy, NULL, NULL, &timeout) < 0) {
