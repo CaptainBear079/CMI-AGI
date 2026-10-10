@@ -49,6 +49,7 @@ void EM__init(EM* handler, bool printExitCodes) {
 	handler->entityCount = 0;
 	handler->entityRetCodes = malloc(handler->entityCount * sizeof(int*));
 	handler->printExitCodes = printExitCodes;
+	handler->simActive = false;
 	return;
 }
 
@@ -59,12 +60,23 @@ int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type
 	}
 	else {
 		printf("[Entity Manager] Creating entity...");
+		fflush(stdout);
+		handler->entityCount++;
+		if(handler->entities == NULL) {
+			handler->entities = malloc(handler->entityCount * sizeof(EM_Entity*));
+		}
+		else {
+			handler->entities = realloc(handler->entities, handler->entityCount * sizeof(EM_Entity*));
+		}
 		handler->entities[id] = malloc(sizeof(EM_Entity));
 		handler->entities[id]->id = id;
-		handler->entities[id]->name = name;
+		if(name != NULL) {
+			handler->entities[id]->name = malloc((strlen(name) + 1) * sizeof(char));
+			strcpy(handler->entities[id]->name, name);
+		}
 		handler->entities[id]->type = type;
-		handler->entities[id]->path = path;
-		handler->entityCount++;
+		handler->entities[id]->path = malloc((strlen(path) + 1) * sizeof(char));
+		strcpy(handler->entities[id]->path, path);
 		printf(" Success!\n");
 	}
 	return 0;
@@ -73,7 +85,7 @@ int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type
 void EM__startSimulation(EM* handler) {
 	handler->simActive = true;
 	for(int i = 0; i < handler->entityCount; i++) {
-		printf("[Entity Manager] Creating Entity...");
+		printf("\n[Entity Manager] Starting Entity...");
 		fflush(stdout);
 		handler->entities[i]->thread = malloc(sizeof(pthread_t));
 		void* arg = malloc(sizeof(EM) + sizeof(int));

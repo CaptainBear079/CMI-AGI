@@ -68,6 +68,6 @@ typedef struct _EM_ {
 #include "../plugin.h"
 
 void EM__init(EM* handler, bool printExitCodes);
-void EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type, char* path);
+int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type, char* path);
 void EM__startSimulation(EM* handler);
 void EM__quitSimulation(EM* handler);

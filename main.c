@@ -67,10 +67,10 @@ void* control_thread(void* arg) {
 // Interpret command
 int CTRL_FUNC__interpretCommand(char buffer[]) {
 	int i = 0;
-	char buf[6];
+	char buf[10];
 	buf[5] = '\0';
-	while(i < 6) {
-		if(buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0') {
+	while(i < 10) {
+		if(buffer[i] == '\n' || buffer[i] == '\0') {
 			buf[i] = '\0';
 			break;
 		}
@@ -78,7 +78,10 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 		i++;
 	}
 
-	if(strcmp("start", buf) == 0) {
+	if(strcmp("create ai", buf) == 0) {
+		return 1;
+	}
+	else if(strcmp("start", buf) == 0) {
 		return 9;
 	}
 	else if(strcmp("kill", buf) == 0) {
@@ -120,10 +123,10 @@ int control_function() {
 		// Read input
 		if(FD_ISSET(STDIN_FILENO, &cmd_copy)) {
 			fgets(buffer, sizeof(buffer), stdin);
-		}
 
-		// Interpret command
-		commands[0] = CTRL_FUNC__interpretCommand(buffer);
+			// Interpret command
+			commands[0] = CTRL_FUNC__interpretCommand(buffer);
+		}
 
 		// Check for and run commands (both stdin and control_thread)
 		for(int i = 0; i < 6; i++) {
