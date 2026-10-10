@@ -109,7 +109,7 @@ int control_function() {
 		for(int i = 0; i < 256; i++) {
 			buffer[i] = '\0';
 		}
-		
+
 		// Check for stdin input
 		cmd_copy = cmd;
 		if(select(STDIN_FILENO + 1, &cmd_copy, NULL, NULL, &timeout) < 0) {
@@ -159,10 +159,20 @@ int control_function() {
 				case 8: {} break;
 
 				// Start Simulation
-				case 9: { EM__startSimulation(&entityManager); } break;
+				case 9: {
+					printf("[Controller] Starting simulation...");
+					fflush(stdout);
+					EM__startSimulation(&entityManager);
+					printf(" Success!\n");
+				} break;
 
 				// Kill Simulation
-				case 10: { EM__quitSimulation(&entityManager); } break;
+				case 10: {
+					printf("[Controller] Ending simulation...");
+					fflush(stdout);
+					EM__quitSimulation(&entityManager);
+					printf(" Success!\n");
+				} break;
 
 				// Quit
 				case 11: {

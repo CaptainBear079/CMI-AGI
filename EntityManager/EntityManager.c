@@ -69,11 +69,14 @@ int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type
 void EM__startSimulation(EM* handler) {
 	handler->simActive = true;
 	for(int i = 0; i < handler->entityCount; i++) {
+		printf("[Entity Manager] Creating Entity...");
+		fflush(stdout);
 		handler->entities[i]->thread = malloc(sizeof(pthread_t));
 		void* arg = malloc(sizeof(EM) + sizeof(int));
 		memcpy(arg, handler, sizeof(EM));
 		memcpy(arg + sizeof(EM), &(handler->entities[i]->id), sizeof(int));
 		pthread_create(handler->entities[i]->thread, NULL, (void*)EntityThread, arg);
+		printf(" Done!\n");
 	}
 }
 
