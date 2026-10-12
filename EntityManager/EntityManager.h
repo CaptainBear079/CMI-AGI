@@ -62,6 +62,7 @@ typedef struct _EM_ {
 	/*EM_Event* events;
 	int eventIndex;*/
 	bool simActive;              // Simulation state flag
+	bool simExit;                // Exit flag
 	bool printExitCodes;         // Exit code printing flag
 } EM;
 

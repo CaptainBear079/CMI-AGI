@@ -126,6 +126,9 @@ void EM__startSimulation(EM* handler) {
 void EM__quitSimulation(EM* handler) {
 	for(int i = 0; i < handler->entityCount; i++) {
 		handler->entities[i]->retCode = malloc(sizeof(int));
+	}
+	handler->simExit = true;
+	for(int i = 0; i < handler->entityCount; i++) {
 		pthread_join(handler->entities[i]->thread, (void**)&(handler->entities[i]->retCode));
 	}
 	handler->simActive = false;

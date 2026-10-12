@@ -71,9 +71,9 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 	int i = 0;
 	int bi = 0;
 	int t = 0;
-	char buf[10];
+	char buf[257];
 	bool str = false;
-	buf[5] = '\0';
+	buf[256] = '\0';
 	while(t < 8) {
 		if(str) {
 			if(bi != 0 && (buffer[i] == '\n' || buffer[i] == '\0')) {
@@ -81,7 +81,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				tokens[t].text = malloc((i + 1) * sizeof(char));
 				strcpy(tokens[t].text, buf);
 				t++;
-				bi = 0;
+				break;
 			}
 			else if(buffer[i] == '\"') {
 				str = false;
@@ -96,6 +96,9 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				buf[bi] = '\0';
 				tokens[t].text = malloc((i + 1) * sizeof(char));
 				strcpy(tokens[t].text, buf);
+				if(!(buffer[i] == ' ')) {
+					break;
+				}
 				t++;
 				bi = 0;
 			}
@@ -112,6 +115,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
+			commandsArgs[0] = malloc(6 * sizeof(void**));
 			commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
 			strcpy((char*)commandsArgs[0][0], tokens[2].text);
 
@@ -134,37 +138,37 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[5].text);
 
 			commandsArgs[0][4] = malloc(sizeof(unsigned long long));
-			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[6].text);
+			(*(unsigned long long*)commandsArgs[0][4]) = atoll(tokens[6].text);
 
 			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
-			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[7].text);
+			(*(unsigned long long*)commandsArgs[0][5]) = atoll(tokens[7].text);
 
-			for(int i2 = 0; i2 < 8; i2++) {
+			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
 			return CMI__CTRL_FUNC__CREATE_AI;
 		}
 		else if(strcmp("3d", tokens[1].text) == 0) {
-			for(int i2 = 0; i2 < 8; i2++) {
+			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
 			return CMI__CTRL_FUNC__CREATE_3D;
 		}
 	}
 	else if(strcmp("start", tokens[0].text) == 0) {
-		for(int i2 = 0; i2 < 8; i2++) {
+		for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 			free(tokens[i2].text);
 		}
 		return CMI__CTRL_FUNC__START_SIMULATION;
 	}
 	else if(strcmp("kill", tokens[0].text) == 0) {
-		for(int i2 = 0; i2 < 8; i2++) {
+		for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 			free(tokens[i2].text);
 		}
 		return CMI__CTRL_FUNC__KILL_SIMULATION;
 	}
 	else if(strcmp("quit", tokens[0].text) == 0) {
-		for(int i2 = 0; i2 < 8; i2++) {
+		for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 			free(tokens[i2].text);
 		}
 		return CMI__CTRL_FUNC__QUIT;

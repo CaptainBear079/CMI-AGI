@@ -13,7 +13,7 @@ int CPlugin_main(PluginInterface* interface) {
 	for(int n = 0; n < NEURAL_NETWORK->neuronCount; n++) {
 		NEURAL_NETWORK->neurons[n].then = clock();
 	}
-	while(true) {
+	while(!(*(interface->exitFlag))) {
 		for(int i = 0; i < INPUT_COUNT; i++) {
 			((Neuron*)INPUT[i].target)->input += INPUT[i].input;
 		}
