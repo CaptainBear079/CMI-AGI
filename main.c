@@ -5,6 +5,7 @@
 short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 int commands[6];                        // Command queue
+void*** commandsArgs[6];                // Argument lists for commands
 pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
 pthread_t ctrl_thread_id;               // pthread_t for the control thread
@@ -66,29 +67,69 @@ void* control_thread(void* arg) {
 
 // Interpret command
 int CTRL_FUNC__interpretCommand(char buffer[]) {
+	Token tokens[8];
 	int i = 0;
+	int bi = 0;
+	int t = 0;
 	char buf[10];
 	buf[5] = '\0';
-	while(i < 10) {
-		if(buffer[i] == '\n' || buffer[i] == '\0') {
-			buf[i] = '\0';
-			break;
+	while(t < 8) {
+		if(bi != 0 && (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0')) {
+			buf[bi] = '\0';
+			tokens[t].text = malloc((i + 1) * sizeof(char));
+			strcpy(tokens[t].text, buf);
+			t++;
+			bi = 0;
 		}
-		buf[i] = buffer[i];
+		else {
+			buf[bi] = buffer[i];
+			bi++;
+		}
 		i++;
 	}
 
-	if(strcmp("create ai", buf) == 0) {
-		return 1;
+	if(strcmp("create", tokens[0].text) == 0) {
+		if(strcmp("ai", tokens[1].text) == 0) {
+			commandsArgs[0][0] = malloc(strlen(tokens[2].text) * sizeof(char));
+			strcpy(commandsArgs[0][0], tokens[2].text);
+
+			commandsArgs[0][1] = malloc(sizeof(int));
+			if(strcmp("cplugin", tokens[3].text) == 0) {
+				*(commandsArgs[0][1]) = EM_ENTITY__TYPE_CPLUGIN;
+			}
+			else if(strcmp("engine", tokens[3].text) == 0) {
+				*(commandsArgs[0][1]) = EM_ENTITY__TYPE_ENTITY_ENGINE;
+			}
+			else {
+				fprintf(stderr, "[Controller] ERROR: Invalid command.\n");
+				return 0;
+			}
+
+			commandsArgs[0][2] = malloc(strlen(tokens[4].text) * sizeof(char));
+			strcpy(commandsArgs[0][2], tokens[4].text);
+
+			commandsArgs[0][3] = malloc(sizeof(unsigned long long));
+			*(commandsArgs[0][3]) = atoll(tokens[5].text);
+
+			commandsArgs[0][4] = malloc(sizeof(unsigned long long));
+			*(commandsArgs[0][3]) = atoll(tokens[6].text);
+
+			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
+			*(commandsArgs[0][3]) = atoll(tokens[7].text);
+			return CMI__CTRL_FUNC__CREATE_AI;
+		}
+		else if(strcmp("3d", tokens[1].text) == 0) {
+			return CMI__CTRL_FUNC__CREATE_3D;
+		}
 	}
-	else if(strcmp("start", buf) == 0) {
-		return 9;
+	else if(strcmp("start", tokens[0].text) == 0) {
+		return CMI__CTRL_FUNC__START_SIMULATION;
 	}
-	else if(strcmp("kill", buf) == 0) {
-		return 10;
+	else if(strcmp("kill", tokens[0].text) == 0) {
+		return CMI__CTRL_FUNC__KILL_SIMULATION;
 	}
-	else if(strcmp("quit", buf) == 0) {
-		return 11;
+	else if(strcmp("quit", tokens[0].text) == 0) {
+		return CMI__CTRL_FUNC__QUIT;
 	}
 	return 0;
 }
@@ -133,38 +174,42 @@ int control_function() {
 			noNextCommand = false;
 			switch(commands[i]){
 				// No command
-				case 0: {
+				case CMI__CTRL_FUNC__NO_COMMAND: {
 					noNextCommand = true;
 				} break;
 
 				// Create AI
-				case 1: {
-					EM__createEntity(&entityManager, entityManager.entityCount, "Test 1", EM_ENTITY__TYPE_CPLUGIN, "./build/dev-test-v0.0.1.so");
+				case CMI__CTRL_FUNC__CREATE_AI: {
+					EM__createEntity(
+						&entityManager, entityManager.entityCount,
+						commandsArgs[i][0], *(commandsArgs[i][1]), commandsArgs[i][2],
+						*(commandsArgs[i][3]), *(commandsArgs[i][4]), *(commandsArgs[i][5])
+					);
 				} break;
 
 				// Import AI
-				case 2: {} break;
+				case CMI__CTRL_FUNC__IMPORT_AI: {} break;
 
 				// Export AI
-				case 3: {} break;
+				case CMI__CTRL_FUNC__EXPORT_AI: {} break;
 
 				// Remove AI
-				case 4: {} break;
+				case CMI__CTRL_FUNC__REMOVE_AI: {} break;
 
 				// Create 3D Model
-				case 5: {} break;
+				case CMI__CTRL_FUNC__CREATE_3D: {} break;
 
 				// Import 3D Model
-				case 6: {} break;
+				case CMI__CTRL_FUNC__IMPORT_3D: {} break;
 
 				// Export 3D Model
-				case 7: {} break;
+				case CMI__CTRL_FUNC__EXPORT_3D: {} break;
 
 				// Remove 3D Model
-				case 8: {} break;
+				case CMI__CTRL_FUNC__REMOVE_3D: {} break;
 
 				// Start Simulation
-				case 9: {
+				case CMI__CTRL_FUNC__START_SIMULATION: {
 					printf("[Controller] Starting simulation...");
 					fflush(stdout);
 					EM__startSimulation(&entityManager);
@@ -172,7 +217,7 @@ int control_function() {
 				} break;
 
 				// Kill Simulation
-				case 10: {
+				case CMI__CTRL_FUNC__KILL_SIMULATION: {
 					printf("[Controller] Ending simulation...");
 					fflush(stdout);
 					EM__quitSimulation(&entityManager);
@@ -180,7 +225,7 @@ int control_function() {
 				} break;
 
 				// Quit
-				case 11: {
+				case CMI__CTRL_FUNC__QUIT: {
 					noNextCommand = true;
 					printf("\n");
 					return 0;
