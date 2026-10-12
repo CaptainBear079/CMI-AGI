@@ -41,7 +41,7 @@ typedef struct _EM_Vision_ {
 } EM_Vision;*/
 
 typedef struct _EM_Entity_ {
-	pthread_t* thread;
+	pthread_t thread;  // Thread
 	char* name;        // Entity name
 	unsigned int id;   // Unique ID for the Entity
 	unsigned int type; // Entity AI type (C plugin/Entity Engine)
@@ -51,6 +51,7 @@ typedef struct _EM_Entity_ {
 	void* output;      // Output data (dynamically defined at runtime)
 	int outputCount;   // Amount of outputs
 	void* data;        // Save data
+	int* retCode;      // Return code pointer
 } EM_Entity;
 
 typedef struct _EM_ {
@@ -61,7 +62,6 @@ typedef struct _EM_ {
 	/*EM_Event* events;
 	int eventIndex;*/
 	bool simActive;              // Simulation state flag
-	int** entityRetCodes;        // Entity return codes
 	bool printExitCodes;         // Exit code printing flag
 } EM;
 

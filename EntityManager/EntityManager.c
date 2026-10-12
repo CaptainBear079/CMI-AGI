@@ -3,22 +3,21 @@
 void* EntityThread(void* arg) {
 	EM* em = (EM*)arg;
 	unsigned int* id = (unsigned int*)(arg + sizeof(EM));
-	int* retCode = malloc(sizeof(int));
 	if(em->entities[*id]->type == EM_ENTITY__TYPE_CPLUGIN) {
 		// Load C Plugin AI program
 		void* handle = dlopen(em->entities[*id]->path, RTLD_NOW);
 		if(!handle) {
 			fprintf(stderr, "[Entity Thread] Error while loading C Plugin:\n-> Load error: %s\n", dlerror());
-			*retCode = 1;
-			return retCode;
+			*em->entities[*id]->retCode = 1;
+			return em->entities[*id]->retCode;
 		}
 
 		PluginMain _CPlugin = (PluginMain)dlsym(handle, "CPlugin_main");
 		if(!_CPlugin) {
 			fprintf(stderr, "[Entity Thread] Error while loading C Plugin:\n-> Symbol error: %s\n", dlerror());
 			dlclose(handle);
-			*retCode = 1;
-			return retCode;
+			*em->entities[*id]->retCode = 1;
+			return em->entities[*id]->retCode;
 		}
 
 		// Set up Plugin Interface
@@ -26,11 +25,11 @@ void* EntityThread(void* arg) {
 		PI.entity = (void*)em->entities[*id];
 
 		// Run AI
-		*retCode = _CPlugin(&PI);
+		*em->entities[*id]->retCode = _CPlugin(&PI);
 
 		// Tick end
 		dlclose(handle);
-		return retCode;
+		return em->entities[*id]->retCode;
 	}
 	else if(em->entities[*id]->type == EM_ENTITY__TYPE_ENTITY_ENGINE) {
 		// Load EE (Entity Engine) script
@@ -38,8 +37,8 @@ void* EntityThread(void* arg) {
 	}
 
 	// Unexpected error
-	*retCode = -1;
-	return retCode;
+	*em->entities[*id]->retCode = -1;
+	return em->entities[*id]->retCode;
 }
 
 void EM__init(EM* handler, bool printExitCodes) {
@@ -47,7 +46,6 @@ void EM__init(EM* handler, bool printExitCodes) {
 	handler->tickYear = 0;
 	handler->entities = NULL;
 	handler->entityCount = 0;
-	handler->entityRetCodes = malloc(handler->entityCount * sizeof(int*));
 	handler->printExitCodes = printExitCodes;
 	handler->simActive = false;
 	return;
@@ -117,23 +115,29 @@ void EM__startSimulation(EM* handler) {
 	for(int i = 0; i < handler->entityCount; i++) {
 		printf("\n[Entity Manager] Starting Entity...");
 		fflush(stdout);
-		handler->entities[i]->thread = malloc(sizeof(pthread_t));
 		void* arg = malloc(sizeof(EM) + sizeof(int));
 		memcpy(arg, handler, sizeof(EM));
 		memcpy(arg + sizeof(EM), &(handler->entities[i]->id), sizeof(int));
-		pthread_create(handler->entities[i]->thread, NULL, (void*)EntityThread, arg);
+		pthread_create(&(handler->entities[i]->thread), NULL, (void*)EntityThread, arg);
 		printf(" Done!\n");
 	}
 }
 
 void EM__quitSimulation(EM* handler) {
 	for(int i = 0; i < handler->entityCount; i++) {
-		pthread_join(*(handler->entities[i]->thread), (void**)&(handler->entityRetCodes[i]));
+		handler->entities[i]->retCode = malloc(sizeof(int));
+		pthread_join(handler->entities[i]->thread, (void**)&(handler->entities[i]->retCode));
 	}
 	handler->simActive = false;
 	if(handler->printExitCodes) {
 		for(int i = 0; i < handler->entityCount; i++) {
-			printf("[Entity:%d]: Exit code: %d\n", i, *(handler->entityRetCodes[i]));
+			printf("[Entity:%d]: Exit code: %d\n", i, *(handler->entities[i]->retCode));
+			free(handler->entities[i]->retCode);
+		}
+	}
+	else {
+		for(int i = 0; i < handler->entityCount; i++) {
+			free(handler->entities[i]->retCode);
 		}
 	}
 }

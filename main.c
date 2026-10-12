@@ -116,19 +116,35 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 
 			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
 			*(commandsArgs[0][3]) = atoll(tokens[7].text);
+
+			for(int i2 = 0; i2 < 8; i2++) {
+				free(tokens[i2].text);
+			}
 			return CMI__CTRL_FUNC__CREATE_AI;
 		}
 		else if(strcmp("3d", tokens[1].text) == 0) {
+			for(int i2 = 0; i2 < 8; i2++) {
+				free(tokens[i2].text);
+			}
 			return CMI__CTRL_FUNC__CREATE_3D;
 		}
 	}
 	else if(strcmp("start", tokens[0].text) == 0) {
+		for(int i2 = 0; i2 < 8; i2++) {
+			free(tokens[i2].text);
+		}
 		return CMI__CTRL_FUNC__START_SIMULATION;
 	}
 	else if(strcmp("kill", tokens[0].text) == 0) {
+		for(int i2 = 0; i2 < 8; i2++) {
+			free(tokens[i2].text);
+		}
 		return CMI__CTRL_FUNC__KILL_SIMULATION;
 	}
 	else if(strcmp("quit", tokens[0].text) == 0) {
+		for(int i2 = 0; i2 < 8; i2++) {
+			free(tokens[i2].text);
+		}
 		return CMI__CTRL_FUNC__QUIT;
 	}
 	return 0;
@@ -185,6 +201,9 @@ int control_function() {
 						commandsArgs[i][0], *(commandsArgs[i][1]), commandsArgs[i][2],
 						*(commandsArgs[i][3]), *(commandsArgs[i][4]), *(commandsArgs[i][5])
 					);
+					for(int i2 = 0; i2 < 6; i2++) {
+						free(commandsArgs[i][i2]);
+					}
 				} break;
 
 				// Import AI
