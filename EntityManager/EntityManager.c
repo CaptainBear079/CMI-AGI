@@ -53,13 +53,19 @@ void EM__init(EM* handler, bool printExitCodes) {
 	return;
 }
 
-int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type, char* path) {
+int EM__createEntity(
+	EM* handler, unsigned int id,
+	char* name, unsigned int type, char* path,
+	unsigned long long dataSectionSize, unsigned long long inputSectionSize, unsigned long long outputSectionSize
+) {
 	if(handler->simActive) {
 		printf("[Entity Manager] Simulation is currently running.\n");
 		return 1;
 	}
 	else {
 		printf("[Entity Manager] Creating entity...");
+
+		// Allocate/Reallocate entity list
 		fflush(stdout);
 		handler->entityCount++;
 		if(handler->entities == NULL) {
@@ -68,15 +74,39 @@ int EM__createEntity(EM* handler, unsigned int id, char* name, unsigned int type
 		else {
 			handler->entities = realloc(handler->entities, handler->entityCount * sizeof(EM_Entity*));
 		}
+
+		// Allocate entity
 		handler->entities[id] = malloc(sizeof(EM_Entity));
+
+		// Set id
 		handler->entities[id]->id = id;
+
+		// Copy name (if not NULL)
 		if(name != NULL) {
 			handler->entities[id]->name = malloc((strlen(name) + 1) * sizeof(char));
 			strcpy(handler->entities[id]->name, name);
 		}
+
+		// Set type
 		handler->entities[id]->type = type;
+
+		// Copy path (return if NULL)
+		if(path == NULL) {
+			fprintf(stderr, "ERROR!\n[Entity Manager] ERROR: path is NULL.\n");
+			return 1;
+		}
 		handler->entities[id]->path = malloc((strlen(path) + 1) * sizeof(char));
 		strcpy(handler->entities[id]->path, path);
+
+		// Allocate data memory
+		handler->entities[id]->data = malloc(dataSectionSize);
+
+		// Allocate input memory
+		handler->entities[id]->input = malloc(inputSectionSize);
+
+		// Allocate output memory
+		handler->entities[id]->output = malloc(outputSectionSize);
+
 		printf(" Success!\n");
 	}
 	return 0;
