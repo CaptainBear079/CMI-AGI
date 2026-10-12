@@ -5,7 +5,7 @@
 short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 int commands[6];                        // Command queue
-void** commandsArgs[6];                 // Argument lists for commands
+void** commandsArgs[7];                 // Argument lists for commands
 pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
 pthread_t ctrl_thread_id;               // pthread_t for the control thread
@@ -143,6 +143,83 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
 			(*(unsigned long long*)commandsArgs[0][5]) = atoll(tokens[7].text);
 
+			int stringlen = strlen(tokens[4].text) + 6;
+			char* string = malloc(stringlen * sizeof(char));
+			strcpy(string, tokens[4].text);
+			string[stringlen - 6] = '.';
+			string[stringlen - 5] = 'i';
+			string[stringlen - 4] = 'n';
+			string[stringlen - 3] = 'f';
+			string[stringlen - 2] = 'o';
+			FILE* fptr = fopen(string, "r");
+			int size = 0;
+			char infoBuffer[257];
+			infoBuffer[256] = '\0';
+			bool reachedEOF = false;
+			char c;
+			int infoIndex = 0;
+			while(!reachedEOF) {
+				for(int ci = 0; ci < 18; ci++) {
+					infoBuffer[ci] = fgetc(fptr);
+					if(infoBuffer[ci] == '/') {
+						infoBuffer[ci] = '\0';
+						break;
+					}
+					else if(infoBuffer[ci] == EOF) {
+						reachedEOF = true;
+					}
+				}
+				if(strcmp(infoBuffer, "*") == 0) {
+					size += sizeof(void*);
+				}
+				else if(strcmp(infoBuffer, "int") == 0) {
+					size += sizeof(int);
+				}
+				else {
+					fprintf(stderr, "[Controller] ERROR: Invalid or unsupported type in \"%s\".", string);
+					return CMI__CTRL_FUNC__NO_COMMAND;
+				}
+				while(true) {
+					c = fgetc(fptr);
+					if(c == '#' || c == '\n') {
+						break;
+					}
+					else if(c == EOF) {
+						reachedEOF = true;
+					}
+				}
+			}
+			commandsArgs[0][6] = malloc(size);
+			rewind(fptr);
+			while(true) {
+				c = fgetc(fptr);
+				if(c == ':') {
+					break;
+				}
+				else if(c == EOF) {
+					reachedEOF = true;
+				}
+			}
+			for(int ci = 0; ci < 5; ci++) {
+				infoBuffer[ci] = fgetc(fptr);
+				if(infoBuffer[ci] == '\n' || infoBuffer[ci] == '#') {
+					infoBuffer[ci] = '\0';
+				}
+				else if(infoBuffer[ci] == EOF) {
+					reachedEOF = true;
+				}
+			}
+			if(strcmp(infoBuffer, "NULL") == 0) {
+				void** temp = &(*commandsArgs[0][6]) + infoIndex;
+				*temp = NULL;
+				infoIndex += sizeof(void*);
+			}
+			else if(strcmp(infoBuffer, "stdin") == 0) {
+				fgets(infoBuffer, 256, stdin);
+				int* temp = &(*commandsArgs[0][6]) + infoIndex;
+				*temp = atoi(infoBuffer);
+			}
+
 			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
@@ -227,7 +304,8 @@ int control_function() {
 						(char*)commandsArgs[i][0], *((unsigned int*)commandsArgs[i][1]), (char*)commandsArgs[i][2],
 						*((unsigned long long*)commandsArgs[i][3]), *((unsigned long long*)commandsArgs[i][4]), *((unsigned long long*)commandsArgs[i][5])
 					);
-					for(int i2 = 0; i2 < 6; i2++) {
+					EM__setDataSection(&entityManager, entityManager.entityCount - 1, commandsArgs[i][6]);
+					for(int i2 = 0; i2 < 8; i2++) {
 						free(commandsArgs[i][i2]);
 					}
 				} break;

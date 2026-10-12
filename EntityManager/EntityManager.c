@@ -110,6 +110,11 @@ int EM__createEntity(
 	return 0;
 }
 
+void EM__setDataSection(EM* handler, unsigned int id, void* data) {
+	handler->entities[id]->data = data;
+	return;
+}
+
 void EM__startSimulation(EM* handler) {
 	handler->simActive = true;
 	for(int i = 0; i < handler->entityCount; i++) {

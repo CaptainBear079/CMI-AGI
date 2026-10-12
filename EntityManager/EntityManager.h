@@ -74,5 +74,6 @@ int EM__createEntity(
 	char* name, unsigned int type, char* path,
 	unsigned long long dataSectionSize, unsigned long long inputSectionSize, unsigned long long outputSectionSize
 );
+void EM__setDataSection(EM* handler, unsigned int id, void* data);
 void EM__startSimulation(EM* handler);
 void EM__quitSimulation(EM* handler);
