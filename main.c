@@ -5,7 +5,7 @@
 short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 int commands[6];                        // Command queue
-void*** commandsArgs[6];                // Argument lists for commands
+void** commandsArgs[6];                 // Argument lists for commands
 pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
 pthread_t ctrl_thread_id;               // pthread_t for the control thread
@@ -72,50 +72,72 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 	int bi = 0;
 	int t = 0;
 	char buf[10];
+	bool str = false;
 	buf[5] = '\0';
 	while(t < 8) {
-		if(bi != 0 && (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0')) {
-			buf[bi] = '\0';
-			tokens[t].text = malloc((i + 1) * sizeof(char));
-			strcpy(tokens[t].text, buf);
-			t++;
-			bi = 0;
+		if(str) {
+			if(bi != 0 && (buffer[i] == '\n' || buffer[i] == '\0')) {
+				buf[bi] = '\0';
+				tokens[t].text = malloc((i + 1) * sizeof(char));
+				strcpy(tokens[t].text, buf);
+				t++;
+				bi = 0;
+			}
+			else if(buffer[i] == '\"') {
+				str = false;
+			}
+			else {
+				buf[bi] = buffer[i];
+				bi++;
+			}
 		}
 		else {
-			buf[bi] = buffer[i];
-			bi++;
+			if(bi != 0 && (buffer[i] == ' ' || buffer[i] == '\n' || buffer[i] == '\0')) {
+				buf[bi] = '\0';
+				tokens[t].text = malloc((i + 1) * sizeof(char));
+				strcpy(tokens[t].text, buf);
+				t++;
+				bi = 0;
+			}
+			else if(buffer[i] == '\"') {
+				str = true;
+			}
+			else {
+				buf[bi] = buffer[i];
+				bi++;
+			}
 		}
 		i++;
 	}
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
-			commandsArgs[0][0] = malloc(strlen(tokens[2].text) * sizeof(char));
-			strcpy(commandsArgs[0][0], tokens[2].text);
+			commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
+			strcpy((char*)commandsArgs[0][0], tokens[2].text);
 
-			commandsArgs[0][1] = malloc(sizeof(int));
+			commandsArgs[0][1] = malloc(sizeof(unsigned int));
 			if(strcmp("cplugin", tokens[3].text) == 0) {
-				*(commandsArgs[0][1]) = EM_ENTITY__TYPE_CPLUGIN;
+				(*(unsigned int*)commandsArgs[0][1]) = EM_ENTITY__TYPE_CPLUGIN;
 			}
 			else if(strcmp("engine", tokens[3].text) == 0) {
-				*(commandsArgs[0][1]) = EM_ENTITY__TYPE_ENTITY_ENGINE;
+				(*(unsigned int*)commandsArgs[0][1]) = EM_ENTITY__TYPE_ENTITY_ENGINE;
 			}
 			else {
 				fprintf(stderr, "[Controller] ERROR: Invalid command.\n");
 				return 0;
 			}
 
-			commandsArgs[0][2] = malloc(strlen(tokens[4].text) * sizeof(char));
-			strcpy(commandsArgs[0][2], tokens[4].text);
+			commandsArgs[0][2] = malloc((strlen(tokens[4].text) + 1) * sizeof(char));
+			strcpy((char*)commandsArgs[0][2], tokens[4].text);
 
 			commandsArgs[0][3] = malloc(sizeof(unsigned long long));
-			*(commandsArgs[0][3]) = atoll(tokens[5].text);
+			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[5].text);
 
 			commandsArgs[0][4] = malloc(sizeof(unsigned long long));
-			*(commandsArgs[0][3]) = atoll(tokens[6].text);
+			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[6].text);
 
 			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
-			*(commandsArgs[0][3]) = atoll(tokens[7].text);
+			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[7].text);
 
 			for(int i2 = 0; i2 < 8; i2++) {
 				free(tokens[i2].text);
@@ -198,8 +220,8 @@ int control_function() {
 				case CMI__CTRL_FUNC__CREATE_AI: {
 					EM__createEntity(
 						&entityManager, entityManager.entityCount,
-						commandsArgs[i][0], *(commandsArgs[i][1]), commandsArgs[i][2],
-						*(commandsArgs[i][3]), *(commandsArgs[i][4]), *(commandsArgs[i][5])
+						(char*)commandsArgs[i][0], *((unsigned int*)commandsArgs[i][1]), (char*)commandsArgs[i][2],
+						*((unsigned long long*)commandsArgs[i][3]), *((unsigned long long*)commandsArgs[i][4]), *((unsigned long long*)commandsArgs[i][5])
 					);
 					for(int i2 = 0; i2 < 6; i2++) {
 						free(commandsArgs[i][i2]);
