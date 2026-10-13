@@ -1,5 +1,6 @@
 #include "./../../EntityManager/EntityManager.h"
 #include "./../../plugin.h"
+#include <stdlib.h>
 #include <math.h>
 
 #define NEURAL_NETWORK ((NeuralNetwork*)((EM_Entity*)interface->entity)->data)
