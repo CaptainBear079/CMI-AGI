@@ -5,7 +5,7 @@
 short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 int commands[6];                        // Command queue
-void** commandsArgs[7];                 // Argument lists for commands
+void** commandsArgs[6];                 // Argument lists for commands
 pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
 pthread_t ctrl_thread_id;               // pthread_t for the control thread
@@ -115,7 +115,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
-			commandsArgs[0] = malloc(6 * sizeof(void**));
+			commandsArgs[0] = malloc(7 * sizeof(void**));
 			commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
 			strcpy((char*)commandsArgs[0][0], tokens[2].text);
 
@@ -151,7 +151,12 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			string[stringlen - 4] = 'n';
 			string[stringlen - 3] = 'f';
 			string[stringlen - 2] = 'o';
+			string[stringlen - 1] = '\0';
 			FILE* fptr = fopen(string, "r");
+			if(fptr == NULL) {
+				fprintf(stderr, "[Controller] ERROR: The .info file for \"%s\" couldn't be opened.\n", tokens[4].text);
+				return CMI__CTRL_FUNC__NO_COMMAND;
+			}
 			int size = 0;
 			char infoBuffer[257];
 			infoBuffer[256] = '\0';
@@ -161,12 +166,14 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			while(!reachedEOF) {
 				for(int ci = 0; ci < 18; ci++) {
 					infoBuffer[ci] = fgetc(fptr);
+					infoBuffer[ci + 1] = '\0';
 					if(infoBuffer[ci] == '/') {
 						infoBuffer[ci] = '\0';
 						break;
 					}
 					else if(infoBuffer[ci] == EOF) {
 						reachedEOF = true;
+						break;
 					}
 				}
 				if(strcmp(infoBuffer, "*") == 0) {
@@ -181,11 +188,12 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				}
 				while(true) {
 					c = fgetc(fptr);
-					if(c == '#' || c == '\n') {
+					if(c == '\n') {
 						break;
 					}
 					else if(c == EOF) {
 						reachedEOF = true;
+						break;
 					}
 				}
 			}
@@ -198,26 +206,30 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				}
 				else if(c == EOF) {
 					reachedEOF = true;
+					break;
 				}
-			}
-			for(int ci = 0; ci < 5; ci++) {
-				infoBuffer[ci] = fgetc(fptr);
-				if(infoBuffer[ci] == '\n' || infoBuffer[ci] == '#') {
-					infoBuffer[ci] = '\0';
+
+				for(int ci = 0; ci < 6; ci++) {
+					infoBuffer[ci] = fgetc(fptr);
+					infoBuffer[ci + 1] = '\0';
+					if(infoBuffer[ci] == '\n' || infoBuffer[ci] == '#') {
+						infoBuffer[ci] = '\0';
+					}
+					else if(infoBuffer[ci] == EOF) {
+						reachedEOF = true;
+						break;
+					}
 				}
-				else if(infoBuffer[ci] == EOF) {
-					reachedEOF = true;
+				if(strcmp(infoBuffer, "NULL") == 0) {
+					void** temp = &(*commandsArgs[0][6]) + infoIndex;
+					*temp = NULL;
+					infoIndex += sizeof(void*);
 				}
-			}
-			if(strcmp(infoBuffer, "NULL") == 0) {
-				void** temp = &(*commandsArgs[0][6]) + infoIndex;
-				*temp = NULL;
-				infoIndex += sizeof(void*);
-			}
-			else if(strcmp(infoBuffer, "stdin") == 0) {
-				fgets(infoBuffer, 256, stdin);
-				int* temp = &(*commandsArgs[0][6]) + infoIndex;
-				*temp = atoi(infoBuffer);
+				else if(strcmp(infoBuffer, "stdin") == 0) {
+					fgets(infoBuffer, 256, stdin);
+					int* temp = &(*commandsArgs[0][6]) + infoIndex;
+					*temp = atoi(infoBuffer);
+				}
 			}
 
 			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {

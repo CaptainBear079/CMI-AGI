@@ -12,7 +12,7 @@ int CPlugin_main(PluginInterface* interface) {
 		);
 		double temp = 0.0;
 		for(int n = 0; n < NEURAL_NETWORK->neuronCount; n++) {
-			temp = fmod(rand(), -55.0);
+			temp = fmod(((double)rand() / RAND_MAX), -55.0);
 			while(temp > -40.0 || temp < -55.0) {
 				if(temp > -40.0) {
 					temp = temp * 1.3;
@@ -22,7 +22,7 @@ int CPlugin_main(PluginInterface* interface) {
 				}
 			}
 			NEURAL_NETWORK->neurons[n].V_threshold = temp;
-			temp = fmod(rand(), -70.0);
+			temp = fmod(((double)rand() / RAND_MAX), -70.0);
 			while(temp > -60.0 || temp < -70.0) {
 				if(temp > -60.0) {
 					temp = temp * 1.3;
@@ -32,7 +32,7 @@ int CPlugin_main(PluginInterface* interface) {
 				}
 			}
 			NEURAL_NETWORK->neurons[n].V_rest = temp;
-			temp = fmod(rand(), -90.0);
+			temp = fmod(((double)rand() / RAND_MAX), -90.0);
 			while(temp > -80.0 || temp < -90.0) {
 				if(temp > -80.0) {
 					temp = temp * 1.3;
@@ -42,7 +42,7 @@ int CPlugin_main(PluginInterface* interface) {
 				}
 			}
 			NEURAL_NETWORK->neurons[n].V_reset = temp;
-			temp = fmod(rand(), 0.5);
+			temp = fmod(((double)rand() / RAND_MAX), 0.5);
 			NEURAL_NETWORK->neurons[n].V_rest = temp;
 		}
 	}
