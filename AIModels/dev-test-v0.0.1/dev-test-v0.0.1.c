@@ -17,6 +17,7 @@ int CPlugin_main(PluginInterface* interface) {
 	while(!(*(interface->exitFlag))) {
 		for(int i = 0; i < INPUT_COUNT; i++) {
 			((Neuron*)INPUT[i].target)->input += INPUT[i].input;
+			INPUT[i].input = 0.0;
 		}
 
 		for(int n = 0; n < NEURAL_NETWORK->neuronCount; n++) {
@@ -39,7 +40,7 @@ int CPlugin_main(PluginInterface* interface) {
 			}
 		}
 		for(int o = 0; o < OUTPUT_COUNT; o++) {
-			OUTPUT[o].output = ((Neuron*)OUTPUT[o].source)->V;
+			OUTPUT[o].output += ((Neuron*)OUTPUT[o].source)->V;
 		}
 	}
 	return 0;
