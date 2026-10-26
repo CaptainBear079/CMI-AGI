@@ -155,82 +155,111 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			FILE* fptr = fopen(string, "r");
 			if(fptr == NULL) {
 				fprintf(stderr, "[Controller] ERROR: The .info file for \"%s\" couldn't be opened.\n", tokens[4].text);
-				return CMI__CTRL_FUNC__NO_COMMAND;
+				return -1;
 			}
+			commandsArgs[0][6] = NULL;
 			int size = 0;
+			int tsize = 0;
 			char infoBuffer[257];
 			infoBuffer[256] = '\0';
-			bool reachedEOF = false;
 			char c;
-			int infoIndex = 0;
-			while(!reachedEOF) {
-				for(int ci = 0; ci < 18; ci++) {
+			bool nl;
+			while(true) {
+				for(int ci = 0; ci < 5; ci++) {
 					infoBuffer[ci] = fgetc(fptr);
 					infoBuffer[ci + 1] = '\0';
 					if(infoBuffer[ci] == '/') {
 						infoBuffer[ci] = '\0';
 						break;
 					}
-					else if(infoBuffer[ci] == EOF) {
-						reachedEOF = true;
-						break;
+					else if(infoBuffer[ci] == '\n' || infoBuffer[ci] == EOF) {
+						fprintf(stderr, "[Controller] ERROR: Uncomplete line in \"%s\".\n", string);
+						return -1;
 					}
 				}
 				if(strcmp(infoBuffer, "*") == 0) {
-					size += sizeof(void*);
+					tsize = sizeof(void*);
+					size += tsize;
+					if(commandsArgs[0][6] == NULL) {
+						commandsArgs[0][6] = malloc(size);
+					}
+					else {
+						realloc(commandsArgs[0][6], size);
+					}
 				}
 				else if(strcmp(infoBuffer, "int") == 0) {
-					size += sizeof(int);
+					tsize = sizeof(int);
+					size += tsize;
+					if(commandsArgs[0][6] == NULL) {
+						commandsArgs[0][6] = malloc(size);
+					}
+					else {
+						realloc(commandsArgs[0][6], size);
+					}
 				}
 				else {
-					fprintf(stderr, "[Controller] ERROR: Invalid or unsupported type in \"%s\".", string);
-					return CMI__CTRL_FUNC__NO_COMMAND;
+					fprintf(stderr, "[Controller] ERROR: Invalid or unsupported type in \"%s\".\n", string);
+					return -1;
 				}
 				while(true) {
 					c = fgetc(fptr);
-					if(c == '\n') {
+					if(c == ':') {
 						break;
 					}
-					else if(c == EOF) {
-						reachedEOF = true;
-						break;
+					if(c == '\n' || c == EOF) {
+						fprintf(stderr, "[Controller] ERROR: Uncomplete line in \"%s\".\n", string);
+						return -1;
 					}
 				}
-			}
-			commandsArgs[0][6] = malloc(size);
-			rewind(fptr);
-			while(true) {
-				c = fgetc(fptr);
-				if(c == ':') {
-					break;
-				}
-				else if(c == EOF) {
-					reachedEOF = true;
-					break;
-				}
-
-				for(int ci = 0; ci < 6; ci++) {
+				for(int ci = 0; ci < 7; ci++) {
 					infoBuffer[ci] = fgetc(fptr);
 					infoBuffer[ci + 1] = '\0';
 					if(infoBuffer[ci] == '\n' || infoBuffer[ci] == '#') {
+						if(infoBuffer[ci] == '\n') {
+							nl = true;
+						}
 						infoBuffer[ci] = '\0';
+						break;
 					}
 					else if(infoBuffer[ci] == EOF) {
-						reachedEOF = true;
-						break;
+						fprintf(stderr, "[Controller] ERROR: Uncomplete line in \"%s\".\n", string);
+						return -1;
 					}
 				}
 				if(strcmp(infoBuffer, "NULL") == 0) {
-					void** temp = &(*commandsArgs[0][6]) + infoIndex;
-					*temp = NULL;
-					infoIndex += sizeof(void*);
+					*((void**)commandsArgs[0][6] + size - tsize) = NULL;
 				}
 				else if(strcmp(infoBuffer, "stdin") == 0) {
-					fgets(infoBuffer, 256, stdin);
-					int* temp = &(*commandsArgs[0][6]) + infoIndex;
-					*temp = atoi(infoBuffer);
+					if(!nl) {
+						for(int ci = 0; ci < 256; ci++) {
+							infoBuffer[ci] = fgetc(fptr);
+							infoBuffer[ci + 1] = '\0';
+							if(infoBuffer[ci] == '\n') {
+								infoBuffer[ci] = '\0';
+								break;
+							}
+							else if(infoBuffer[ci] == EOF) {
+								c = EOF;
+								break;
+							}
+						}
+						printf("[Controller] Input data of %ld symbols: %s\n", size / sizeof(char), infoBuffer);
+					}
+					*((void**)commandsArgs[0][6] + size - tsize) = fgets(infoBuffer, size / sizeof(char), stdin);
+				}
+				else {
+					fprintf(stderr, "[Controller] ERROR: Invalid or unsupported value in \"%s\".\n", string);
+					return -1;
+				}
+				nl = false;
+				if(c == EOF) {
+					goto REACHED_EOF;
+				}
+				else if((c = fgetc(fptr)) == EOF) {
+					goto REACHED_EOF;
 				}
 			}
+			REACHED_EOF:
 
 			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 				free(tokens[i2].text);
@@ -263,6 +292,11 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 		return CMI__CTRL_FUNC__QUIT;
 	}
 	return 0;
+}
+
+// Control function Command interpreter (CTRL_FUNC__interpretCommand V2)
+int CTRL_FUNC__interpretCommand(char buffer[]) {
+	return -1; // No/Invalid command
 }
 
 // Control function
@@ -298,6 +332,9 @@ int control_function() {
 
 			// Interpret command
 			commands[0] = CTRL_FUNC__interpretCommand(buffer);
+			if(commands[0] == -1) {
+				return -1;
+			}
 		}
 
 		// Check for and run commands (both stdin and control_thread)
