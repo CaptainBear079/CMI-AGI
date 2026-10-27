@@ -54,9 +54,9 @@ void WM_X11__destroyWindow(WM_X11* handler, int WMIndex) {
 bool WM_X11__useMultithreading() {
 	if (!XInitThreads()) {
         fprintf(stderr, "X11 does not support multithreading\n");
-		return -1;
+		return false;
 	}
-	return 0;
+	return true;
 }
 
 void WM_X11__createGC(WM_X11* handler, int WMIndex) {

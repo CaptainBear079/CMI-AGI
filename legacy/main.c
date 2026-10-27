@@ -6,9 +6,7 @@ short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
 int commands[6];                        // Command queue
 void** commandsArgs[6];                 // Argument lists for commands
-pthread_t env_thread_id;                // pthread_t for the environment thread
 int ENV_ret = 0;                        // Return code of the environment thread
-pthread_t ctrl_thread_id;               // pthread_t for the control thread
 int CTRL_ret = 0;                       // Return code of the control thread
 bool noNextCommand = false;             // Skip the printing of "\n$ "
 bool exitFlag = false;                  // Shutdown signal to env_thread and control_thread
@@ -426,9 +424,6 @@ int main(int argc, char* argv[]) {
 		if(strcmp("--restore", argv[i]) == 0) {
 			args = args | CMI__ARG_RESTORE_SESSION;
 		}
-		else if(strcmp("-gui", argv[i]) == 0) {
-			args = args | CMI__ARG_GUI_MODE;
-		}
 	}
 	if(args & CMI__ARG_RESTORE_SESSION) {
 		loadSave(&save); // INDEV
@@ -437,83 +432,7 @@ int main(int argc, char* argv[]) {
 	printf("[Setup]: Preparing entity manager...\n");
 	// - Prepare entity manager
 	EM__init(&entityManager, (args & CMI__ARG_GUI_MODE));
-
-	printf("[Setup]: Preparing window(s)...\n");
-	// - Prepare windows (control window GUI mode only)
-	//   - Setup Window Manager
-	if(WM__useMultithreading) {
-		return -1;
-	}
-
-	WM__openDisplay(&windows);
-
-	#ifdef _GUI_SUPPORT
-	windows.windows = calloc(2, sizeof(WM__Window));
-	windows.windows[0].windowBorderWidth = 5;
-	if(args & CMI__ARG_GUI_MODE) {
-		windows.windows[1].windowBorderWidth = 5;
-	}
-	#else
-	windows.windows = calloc(1, sizeof(WM__Window));
-	windows.windows[0].windowBorderWidth = 5;
-	if(args & CMI__ARG_GUI_MODE) {
-		printf("[Setup]: GUI mode is not supported in this build.\n");
-		return 1;
-	}
-	#endif
-
-	windows.windows[0].windowX = CMI__ENV_WINDOW_POS_X;
-	windows.windows[0].windowY = CMI__ENV_WINDOW_POS_Y;
-	windows.windows[0].windowWidth = CMI__ENV_WINDOW_WIDTH;
-	if(args & CMI__ARG_GUI_MODE) {
-		windows.windows[0].windowHeight = CMI__ENV_WINDOW_HEIGHT_GUI;
-	}
-	else {
-		windows.windows[0].windowHeight = CMI__ENV_WINDOW_HEIGHT;
-	}
 	
-	WM__createWindow(
-		&windows, 0,
-		BlackPixel(windows.display, windows.screen),
-		WhitePixel(windows.display, windows.screen),
-		NoEventMask, DefaultDepth(windows.display, windows.screen),
-		DefaultVisual(windows.display, windows.screen),
-		InputOutput
-	);
-
-	WM__createGraphicsContext(&windows, 0);
-
-	#ifdef _GUI_SUPPORT
-	if(args & CMI__ARG_GUI_MODE) {
-		windows.windows[1].windowX = CMI__CTRL_WINDOW_POS_X;
-		windows.windows[1].windowY = CMI__CTRL_WINDOW_POS_Y;
-		windows.windows[1].windowWidth = CMI__CTRL_WINDOW_WIDTH;
-		windows.windows[1].windowHeight = CMI__CTRL_WINDOW_HEIGHT;
-		WM__createWindow(
-			&windows, 1,
-			WhitePixel(windows.display, windows.screen),
-			BlackPixel(windows.display, windows.screen),
-			KeyPressMask | KeyReleaseMask | ButtonPressMask | PointerMotionMask,
-			DefaultDepth(windows.display, windows.screen),
-			DefaultVisual(windows.display, windows.screen),
-			InputOutput
-		);
-	}
-	#endif
-
-	printf("[Setup]: Starting 3D environment... ");
-	pthread_create(&env_thread_id, NULL, (void*)env_thread, NULL);
-	if(args & CMI__ARG_GUI_MODE) {
-		printf("Started!\n[Setup]: Starting control thread... ");
-		pthread_create(&ctrl_thread_id, NULL, (void*)control_thread, NULL);
-		printf("Started!\n");
-	}
-	else {
-		printf("Started!\n");
-	}
-	
-	printf("Setup complete.\n");
-
 	//
 	// Main loop
 	//
