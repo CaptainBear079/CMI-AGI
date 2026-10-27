@@ -1,4 +1,4 @@
-#include "Fast3D.h"
+#include <Fast3D.h>
 Mesh cube;
 void init_cube() {
 	cube.triangles = (Triangle*)malloc(12 * sizeof(Triangle));

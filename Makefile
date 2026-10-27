@@ -1,7 +1,5 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -fPIC -I.
-LIB_NAME = libFast3D.so
-LIB_SRC = ./Fast3D/Fast3D.c
 MODEL_NAME = dev-test-v0.0.1.so
 MODEL_SRC = ./AIModels/dev-test-v0.0.1/dev-test-v0.0.1.c
 NAME = cmi-agi
@@ -9,9 +7,6 @@ BUILD_DIR = ./build
 
 
 all: $(NAME)
-
-$(LIB_NAME):
-	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)/$@ $(LIB_SRC) -lm
 
 $(MODEL_NAME):
 	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)/$@ $(MODEL_SRC) -lm
