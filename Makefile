@@ -1,16 +1,9 @@
 CC = gcc
 CFLAGS = -g -Wall -Wextra -fPIC -I.
-MODEL_NAME = dev-test-v0.0.1.so
-MODEL_SRC = ./AIModels/dev-test-v0.0.1/dev-test-v0.0.1.c
 NAME = cmi-agi
 BUILD_DIR = ./build
 
-
 all: $(NAME)
-
-$(MODEL_NAME):
-	$(CC) $(CFLAGS) -shared -o $(BUILD_DIR)/$@ $(MODEL_SRC) -lm
-	cp $(MODEL_NAME).info ./build/
 
 $(NAME): $(LIB_NAME)
 	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/WM_X11.o ./WindowManager/X11/WindowManagerX11.c -D_W_X11 -D_WM_STD__X11 -lX11
