@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define TOKEN__TEXT 0
 #define TOKEN__STRING 1

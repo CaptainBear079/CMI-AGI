@@ -7,7 +7,7 @@ void* viewportThread(void* arg) {
 
 	// Render loop
 	while(!exitFlag) {
-		Fast3D__render(renderer);
+		Fast3D__simpleRender(renderer, false);
 
 		WM__updateImage(&windows, 0);
 

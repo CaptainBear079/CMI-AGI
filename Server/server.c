@@ -1,5 +1,10 @@
 #include "server.h"
 
+// Global variables
+short args = 0;   // Argument bitmap
+Save save;        // Save file data
+EM entityManager; // Entity handle
+
 int main(int argc, char* argv[]) {
     //
     // Setup

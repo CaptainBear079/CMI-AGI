@@ -9,7 +9,7 @@
 #include <sys/select.h>
 
 // Libraries
-#include "Fast3D/cube.h"          // TEMP: Cube model (for testing and later use as template)
+#include "cube.h"          // TEMP: Cube model (for testing and later use as template)
 
 // - Control function commands
 #define CMI__CTRL_FUNC__NO_COMMAND 0

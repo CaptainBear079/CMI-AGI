@@ -1,15 +1,33 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra -fPIC -I.
-NAME = cmi-agi
-BUILD_DIR = ./build
+CFLAGS = -g -Wall -Wextra
+DESKTOP ?= X11
+CLIENT = cmi-client
+CLIENT_DEFINES = -D_W_$(DESKTOP) -D_WM_STD__$(DESKTOP) -D_GUI_SUPPORT
+SERVER_DEFINES = -D_DEBUG
+SERVER = cmi-server
+BUILD_DIR = build
+VP = Client/Viewport/viewport.c
+WM = Client/WindowManager/$(DESKTOP)/WindowManager$(DESKTOP).c
+EM = Server/EntityManager/EntityManager.c
+SFI = Server/SaveFileInterpreter/saveInterpreter.c
 
-all: $(NAME)
+all: create-build-dir build-util $(CLIENT) $(SERVER)
 
-$(NAME): $(LIB_NAME)
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/WM_X11.o ./WindowManager/X11/WindowManagerX11.c -D_W_X11 -D_WM_STD__X11 -lX11
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/EM.o ./EntityManager/EntityManager.c -lpthread
-	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/saveInterpreter.o ./SaveFileInterpreter/saveInterpreter.c -D_DEBUG
-	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ main.c $(BUILD_DIR)/WM_X11.o $(BUILD_DIR)/EM.o -D_W_X11 $(BUILD_DIR)/saveInterpreter.o -D_WM_STD__X11 -D_GUI_SUPPORT -L$(BUILD_DIR) -Wl,-rpath,'$$ORIGIN' -lFast3D -lpthread -lX11 -lm
+create-build-dir:
+	mkdir -p $(BUILD_DIR)
+
+$(CLIENT): build-util
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/WM_$(DESKTOP).o $(WM) $(CLIENT_DEFINES) -l$(DESKTOP)
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/VP.o $(VP) $(CLIENT_DEFINES) -lFast3D
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ Client/client.c $(BUILD_DIR)/util.o $(BUILD_DIR)/WM_$(DESKTOP).o $(BUILD_DIR)/VP.o $(CLIENT_DEFINES) -lFast3D -lpthread -l$(DESKTOP) -lm
+
+$(SERVER): build-util
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/EM.o $(EM) $(SERVER_DEFINES) -lpthread
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/SFI.o $(SFI) $(SERVER_DEFINES)
+	$(CC) $(CFLAGS) -o $(BUILD_DIR)/$@ Server/server.c $(BUILD_DIR)/util.o $(BUILD_DIR)/EM.o $(BUILD_DIR)/SFI.o $(SERVER_DEFINES) -lpthread -lFast3D
+
+build-util:
+	$(CC) $(CFLAGS) -c -o $(BUILD_DIR)/util.o util/Tokenizer.c
 
 clean:
 	rm -f $(BUILD_DIR)/*

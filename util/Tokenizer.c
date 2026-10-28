@@ -1,4 +1,4 @@
-#include <Tokenizer.h>
+#include "Tokenizer.h"
 
 Token* tokenize(char* str, size_t maxTokens) {
 	// Variables

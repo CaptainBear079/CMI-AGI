@@ -1,6 +1,6 @@
 #include "saveInterpreter.h"
 
-int readSave(char* save, int maxTokens) {
+Token* readSave(char* save, int maxTokens) {
 	// Variables
 	char* saveBuffer;
 	saveBuffer = malloc(513);
@@ -13,7 +13,7 @@ int readSave(char* save, int maxTokens) {
 	FILE* saveFile = fopen(save, "r");
 	if(saveFile == NULL) {
 		fprintf(stderr, "[SaveFileInterpreter]: Cannot open save file: %s\n", save);
-		return -1;
+		return NULL;
 	}
 
 	while(true) {
