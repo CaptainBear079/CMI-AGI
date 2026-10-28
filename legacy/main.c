@@ -1,6 +1,5 @@
 #include "main.h"
 
-Save save;                              // Save file data
 bool noNextCommand = false;             // Skip the printing of "\n$ "
 
 // 3D environment_thread
@@ -357,22 +356,4 @@ int control_function() {
 	}
 	printf("\n");
 	return 1; // Unexpected error, exitFlag set by other thread
-}
-
-// Control thread
-int main(int argc, char* argv[]) {
-	printf("[Setup]: Interpreting argumentss...\n");
-	// - Interpreting arguments
-	for(int i = 1; i < argc; i++) {
-		if(strcmp("--restore", argv[i]) == 0) {
-			args = args | CMI__ARG_RESTORE_SESSION;
-		}
-	}
-	if(args & CMI__ARG_RESTORE_SESSION) {
-		loadSave(&save); // INDEV
-	}
-
-	printf("[Setup]: Preparing entity manager...\n");
-	// - Prepare entity manager
-	EM__init(&entityManager, (args & CMI__ARG_GUI_MODE));
 }

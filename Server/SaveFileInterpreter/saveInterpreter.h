@@ -4,10 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../util/Tokenizer.h"
-
-extern char* tempFolder;
-extern char* sessionSave;
+#include "../../util/Tokenizer.h"
 
 typedef struct _AISave_ {} AISave;
 typedef struct _ENVSave_ {} ENVSave;

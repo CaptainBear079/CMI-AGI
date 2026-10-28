@@ -10,7 +10,10 @@
 #include <Fast3D.h> // Fast3D render engine
 
 // Modules
+#include "SaveFileInterpreter/saveInterpreter.h"
 #include "EntityManager/EntityManager.h"
 
 // Global variables
+short args = 0;   // Argument bitmap
+Save save;        // Save file data
 EM entityManager; // Entity handle
