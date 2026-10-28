@@ -1,67 +1,13 @@
 #include "main.h"
 
-// Global variables
-// - General system variables
-short args = 0;                         // Argument bitmap
 Save save;                              // Save file data
-int commands[6];                        // Command queue
-void** commandsArgs[6];                 // Argument lists for commands
-int ENV_ret = 0;                        // Return code of the environment thread
-int CTRL_ret = 0;                       // Return code of the control thread
 bool noNextCommand = false;             // Skip the printing of "\n$ "
-bool exitFlag = false;                  // Shutdown signal to env_thread and control_thread
-
-// Window Manager
-WM windows;
-
-// Entity Manager
-EM entityManager;
 
 // 3D environment_thread
 void* env_thread(void* arg) {
 	init_cube();
-	Renderer* renderer = Fast3D__init(CMI__ENV_WINDOW_WIDTH, CMI__ENV_WINDOW_HEIGHT, 90.0);
 	Fast3D__addMesh(renderer, &cube);
-	WM__createImage(&windows, 0, renderer->fb);
-	while(!exitFlag) {
-		Fast3D__render(renderer);
-
-		WM__updateImage(&windows, 0);
-
-		WM__updateWindow(&windows);
-	}
-	Fast3D__destroy(renderer);
-	ENV_ret = 0;
-	return NULL; // Shutdown via exit code signal
 }
-
-// Control GUI thread
-#ifdef _GUI_SUPPORT
-void* control_thread(void* arg) {
-	#ifdef _W_X11
-	XEvent ev;
-	while(!exitFlag) {
-		if(XPending(windows.display) > 0) {
-			if(XNextEvent(windows.display, &ev) != 0) {
-				exitFlag = true;
-				fprintf(stderr, "[GUI Control]: Error from XNextEvent.\n");
-				CTRL_ret = 1;
-				return NULL;
-			}
-		}
-		switch(ev.type) {
-			case ButtonPress: {
-				commands[1] = 11;
-				CTRL_ret = 0;
-				return NULL;
-			} break;
-		}
-	}
-	#endif
-	CTRL_ret = 0;
-	return NULL;
-}
-#endif
 
 // Interpret command
 int CTRL_FUNC__interpretCommand(char buffer[]) {
@@ -415,9 +361,6 @@ int control_function() {
 
 // Control thread
 int main(int argc, char* argv[]) {
-	//
-	// Setup
-	//
 	printf("[Setup]: Interpreting argumentss...\n");
 	// - Interpreting arguments
 	for(int i = 1; i < argc; i++) {
@@ -432,32 +375,4 @@ int main(int argc, char* argv[]) {
 	printf("[Setup]: Preparing entity manager...\n");
 	// - Prepare entity manager
 	EM__init(&entityManager, (args & CMI__ARG_GUI_MODE));
-	
-	//
-	// Main loop
-	//
-	int exitCode = control_function();
-	exitFlag = true;
-	pthread_join(env_thread_id, NULL);
-	if(args & CMI__ARG_GUI_MODE) {
-		pthread_join(ctrl_thread_id, NULL);
-	}
-
-	//
-	// Cleanup
-	//
-	WM__destroyWindow(&windows, 0);
-	#ifdef _GUI_SUPPORT
-	if(args & CMI__ARG_GUI_MODE) {
-		WM__destroyWindow(&windows, 1);
-	}
-	#endif
-	WM__closeDisplay(&windows);
-
-	printf("[Environment]: Exit code: %d\n", ENV_ret);
-	if(args & CMI__ARG_GUI_MODE) {
-		printf("[GUI Control]: Exit code: %d\n", CTRL_ret);
-	}
-	printf("[Controller]: Exit code: %d\n", exitCode);
-	return exitCode;
 }

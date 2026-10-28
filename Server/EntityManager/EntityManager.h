@@ -2,7 +2,7 @@
 // Includes
 #include <stdlib.h>
 #include <pthread.h>
-#include <Fast3D/Fast3D.h>
+#include <Fast3D.h>
 
 
 // Defines

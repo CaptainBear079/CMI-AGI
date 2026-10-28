@@ -1,6 +1,32 @@
 #include "client.h"
 
-void* controlThread(void* arg) {}
+#ifdef _GUI_SUPPORT
+// Control GUI thread
+void* controlThread(void* arg) {
+	#ifdef _W_X11
+	XEvent ev;
+	while(!exitFlag) {
+		if(XPending(windows.display) > 0) {
+			if(XNextEvent(windows.display, &ev) != 0) {
+				exitFlag = true;
+				fprintf(stderr, "[GUI Control]: Error from XNextEvent.\n");
+				controlRet = -1;
+				return NULL;
+			}
+		}
+		switch(ev.type) {
+			case ButtonPress: {
+				commands[1] = 11;
+				controlRet = 0;
+				return NULL;
+			} break;
+		}
+	}
+	#endif
+	controlRet = 0;
+	return NULL;
+}
+#endif
 
 int main(int argc, char* argv[]) {
 	//
@@ -78,7 +104,7 @@ int main(int argc, char* argv[]) {
 
 	WM__createGraphicsContext(&windows, 0);
 
-	printf("[Client Setup]: Starting 3D environment... ");
+	printf("[Client Setup]: Starting 3D viewport... ");
 	fflush(stdout);
 	pthread_create(&viewportThreadID, NULL, (void*)viewportThread, NULL);
 	if(args & CMI__ARG_GUI_MODE) {
@@ -91,7 +117,30 @@ int main(int argc, char* argv[]) {
 	printf("[Client Setup]: Complete!");
 
 	//
+	// Main loop
+	//
+	int exitCode = control_function();
+	exitFlag = true;
+	pthread_join(viewportThreadID, NULL);
+	if(args & CMI__ARG_GUI_MODE) {
+		pthread_join(controlThreadID, NULL);
+	}
+
+	//
 	// Cleanup
 	//
-	return 0;
+	WM__destroyWindow(&windows, 0);
+	#ifdef _GUI_SUPPORT
+	if(args & CMI__ARG_GUI_MODE) {
+		WM__destroyWindow(&windows, 1);
+	}
+	#endif
+	WM__closeDisplay(&windows);
+
+	printf("[Environment]: Exit code: %d\n", viewportRet);
+	if(args & CMI__ARG_GUI_MODE) {
+		printf("[GUI Control]: Exit code: %d\n", controlRet);
+	}
+	printf("[Controller]: Exit code: %d\n", exitCode);
+	return exitCode;
 }
