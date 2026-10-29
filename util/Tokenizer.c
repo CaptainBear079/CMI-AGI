@@ -2,8 +2,16 @@
 
 Token* tokenize(char* str, size_t maxTokens) {
 	// Variables
-	Token* tokens = malloc(64 * sizeof(Token)); // Allocate space for 64 Tokens (re-allocated for more tokens if needed)
-	size_t allocTokens = 64;
+	Token* tokens;
+	size_t allocTokens = 0;
+	if(64 > maxTokens) {
+		tokens = malloc(maxTokens * sizeof(Token));
+		allocTokens = maxTokens;
+	}
+	else {
+		tokens = malloc(64 * sizeof(Token)); // Allocate space for 64 Tokens (re-allocated for more tokens if needed)
+		allocTokens = 64;
+	}
 	char buffer[256]; // Buffer for the tokens
 	int b = 0; // Index for the buffer
 	int t = 0; // Index for the tokens
@@ -17,9 +25,15 @@ Token* tokenize(char* str, size_t maxTokens) {
 				if(b > 0) {
 					buffer[b] = '\0';
 					b++;
-					if(t >= allocTokens) {
+					if(t >= allocTokens && allocTokens < maxTokens) {
 						allocTokens += 64;
-						realloc(tokens, allocTokens * sizeof(Token));
+						if(allocTokens > maxTokens) {
+							realloc(tokens, maxTokens * sizeof(Token));
+							allocTokens = maxTokens;
+						}
+						else {
+							realloc(tokens, allocTokens * sizeof(Token));
+						}
 					}
 					tokens[t].text = malloc(b * sizeof(char));
 					strcpy(tokens[t].text, buffer);
@@ -33,9 +47,15 @@ Token* tokenize(char* str, size_t maxTokens) {
 				if(b > 0) {
 					buffer[b] = '\0';
 					b++;
-					if(t >= allocTokens) {
+					if(t >= allocTokens && allocTokens < maxTokens) {
 						allocTokens += 64;
-						realloc(tokens, allocTokens * sizeof(Token));
+						if(allocTokens > maxTokens) {
+							realloc(tokens, maxTokens * sizeof(Token));
+							allocTokens = maxTokens;
+						}
+						else {
+							realloc(tokens, allocTokens * sizeof(Token));
+						}
 					}
 					tokens[t].text = malloc(b * sizeof(char));
 					strcpy(tokens[t].text, buffer);
@@ -59,9 +79,15 @@ Token* tokenize(char* str, size_t maxTokens) {
 				if(b > 0) {
 					buffer[b] = '\0';
 					b++;
-					if(t >= allocTokens) {
+					if(t >= allocTokens && allocTokens < maxTokens) {
 						allocTokens += 64;
-						realloc(tokens, allocTokens * sizeof(Token));
+						if(allocTokens > maxTokens) {
+							realloc(tokens, maxTokens * sizeof(Token));
+							allocTokens = maxTokens;
+						}
+						else {
+							realloc(tokens, allocTokens * sizeof(Token));
+						}
 					}
 					tokens[t].text = malloc(b * sizeof(char));
 					strcpy(tokens[t].text, buffer);
@@ -88,9 +114,15 @@ Token* tokenize(char* str, size_t maxTokens) {
 				if(b > 0 && !stringFlag) {
 					buffer[b] = '\0';
 					b++;
-					if(t >= allocTokens) {
+					if(t >= allocTokens && allocTokens < maxTokens) {
 						allocTokens += 64;
-						realloc(tokens, allocTokens * sizeof(Token));
+						if(allocTokens > maxTokens) {
+							realloc(tokens, maxTokens * sizeof(Token));
+							allocTokens = maxTokens;
+						}
+						else {
+							realloc(tokens, allocTokens * sizeof(Token));
+						}
 					}
 					tokens[t].text = malloc(b * sizeof(char));
 					strcpy(tokens[t].text, buffer);
@@ -107,10 +139,16 @@ Token* tokenize(char* str, size_t maxTokens) {
 					if(b > 0) {
 						buffer[b] = '\0';
 						b++;
-						if(t >= allocTokens) {
-							allocTokens += 64;
+						if(t >= allocTokens && allocTokens < maxTokens) {
+						allocTokens += 64;
+						if(allocTokens > maxTokens) {
+							realloc(tokens, maxTokens * sizeof(Token));
+							allocTokens = maxTokens;
+						}
+						else {
 							realloc(tokens, allocTokens * sizeof(Token));
 						}
+					}
 						tokens[t].text = malloc(b * sizeof(char));
 						strcpy(tokens[t].text, buffer);
 						tokens[t].type = TOKEN__STRING;
