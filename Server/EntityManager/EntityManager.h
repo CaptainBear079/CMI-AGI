@@ -70,10 +70,10 @@ typedef struct _EM_ {
 
 void EM__init(EM* handler, bool printExitCodes);
 int EM__createEntity(
-	EM* handler, unsigned int id,
-	char* name, unsigned int type, char* path,
+	EM* handler, char* name, unsigned int type, char* path,
 	unsigned long long dataSectionSize, unsigned long long inputSectionSize, unsigned long long outputSectionSize
 );
-void EM__setDataSection(EM* handler, unsigned int id, void* data);
+void EM__setDataSection(EM* handler, unsigned int id, void* data, size_t size);
+void EM__removeEntity(EM* handler, unsigned int id, bool save);
 void EM__startSimulation(EM* handler);
 void EM__quitSimulation(EM* handler);

@@ -52,24 +52,34 @@ void EM__init(EM* handler, bool printExitCodes) {
 }
 
 int EM__createEntity(
-	EM* handler, unsigned int id,
-	char* name, unsigned int type, char* path,
+	EM* handler, char* name, unsigned int type, char* path,
 	unsigned long long dataSectionSize, unsigned long long inputSectionSize, unsigned long long outputSectionSize
 ) {
+	unsigned int id = 0;
 	if(handler->simActive) {
 		printf("[Entity Manager] Simulation is currently running.\n");
-		return 1;
+		return 0;
 	}
 	else {
 		printf("[Entity Manager] Creating entity...");
-
-		// Allocate/Reallocate entity list
 		fflush(stdout);
-		handler->entityCount++;
+
+		// Allocate entity list
 		if(handler->entities == NULL) {
 			handler->entities = malloc(handler->entityCount * sizeof(EM_Entity*));
 		}
-		else {
+
+		// Set id
+		for(int i = 1; i < handler->entityCount; i++) {
+			if(handler->entities[i] == NULL) {
+				id = i;
+			}
+		}
+
+		if(id == 0) {
+			id = handler->entityCount;
+			handler->entityCount++;
+			// Reallocate entity list
 			handler->entities = realloc(handler->entities, handler->entityCount * sizeof(EM_Entity*));
 		}
 
@@ -91,7 +101,7 @@ int EM__createEntity(
 		// Copy path (return if NULL)
 		if(path == NULL) {
 			fprintf(stderr, "ERROR!\n[Entity Manager] ERROR: path is NULL.\n");
-			return 1;
+			return 0;
 		}
 		handler->entities[id]->path = malloc((strlen(path) + 1) * sizeof(char));
 		strcpy(handler->entities[id]->path, path);
@@ -107,11 +117,26 @@ int EM__createEntity(
 
 		printf(" Success!\n");
 	}
-	return 0;
+	return id;
 }
 
-void EM__setDataSection(EM* handler, unsigned int id, void* data) {
-	handler->entities[id]->data = data;
+void EM__setDataSection(EM* handler, unsigned int id, void* data, size_t size) {
+	memcpy(handler->entities[id]->data, data, size);
+	return;
+}
+
+void EM__removeEntity(EM* handler, unsigned int id, bool save) {
+	if(save) {
+		// INDEV
+	}
+	else {
+		free(handler->entities[id]->data);
+	}
+	free(handler->entities[id]->output);
+	free(handler->entities[id]->input);
+	free(handler->entities[id]->path);
+	free(handler->entities[id]->name);
+	free(handler->entities[id]);
 	return;
 }
 
