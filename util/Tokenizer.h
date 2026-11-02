@@ -20,4 +20,5 @@ typedef struct _Token_ {
     int textLength;
 } Token;
 
-Token* tokenize(char* str, size_t maxTokens);
+// Tokenizer (tokenCount is optional if you want to know how many tokens where allocated)
+Token* tokenize(char* str, size_t maxTokens, size_t* tokenCount);

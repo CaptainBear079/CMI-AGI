@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra
+CFLAGS = -g
 DESKTOP ?= X11
 CLIENT = cmi-client
 CLIENT_DEFINES = -D_W_$(DESKTOP) -D_WM_STD__$(DESKTOP) -D_GUI_SUPPORT

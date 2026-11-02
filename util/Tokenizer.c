@@ -1,6 +1,6 @@
 #include "Tokenizer.h"
 
-Token* tokenize(char* str, size_t maxTokens) {
+Token* tokenize(char* str, size_t maxTokens, size_t* tokenCount) {
 	// Variables
 	Token* tokens;
 	size_t allocTokens = 0;
@@ -13,12 +13,12 @@ Token* tokenize(char* str, size_t maxTokens) {
 		allocTokens = 64;
 	}
 	char buffer[256]; // Buffer for the tokens
-	int b = 0; // Index for the buffer
-	int t = 0; // Index for the tokens
+	size_t b = 0; // Index for the buffer
+	size_t t = 0; // Index for the tokens
 	bool stringFlag = false; // Inside string flag
 
 	// Tokenize save file
-	for(unsigned long long s = 0; str != '\0'; s++) {
+	for(unsigned long long s = 0; str[s] != '\0'; s++) {
 		switch((int)str[s]) {
 			case (int)' ':
 			case (int)'\n': {
@@ -172,5 +172,9 @@ Token* tokenize(char* str, size_t maxTokens) {
 		printf("DEBUG: Token: %d, Type: %d, Text: %s\n", i, tokens[i].type, tokens[i].text);
 	}
 	#endif
-	return 0;
+
+	if(tokenCount != NULL) {
+		*tokenCount = t + 1;
+	}
+	return tokens;
 }

@@ -11,8 +11,8 @@ bool exitFlag = false;      // Shutdown flag
 
 // Control function Command interpreter (CTRL_FUNC__interpretCommand V2)
 int CTRL_FUNC__interpretCommand(char buffer[]) {
-	Token* tokens = tokenize(buffer, 8);
-	int t = 8;
+	size_t t = 8;
+	Token* tokens = tokenize(buffer, 8, &t);
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
@@ -29,7 +29,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			}
 			else {
 				fprintf(stderr, "[Controller] ERROR: Invalid command.\n");
-				for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+				for(int i2 = 0; i2 < t; i2++) {
 					free(tokens[i2].text);
 				}
 				return 0;
@@ -102,32 +102,198 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 			size_t bytes_read = fread(buf, 1, (size_t)size, fptr);
 			fclose(fptr);
 			buf[bytes_read] = '\0';
+
+			size_t tokenCount = 0;
+			Token* tempTOKENS = tokenize(buf, 1024, &tokenCount);
+
+			void* mem = NULL;
+			size_t tempSIZE = 0;
+			size = 0;
+			void* value = NULL;
+			for(int i = 0; i < tokenCount; i++) {
+				if(strcmp("*", tempTOKENS[i].text) == 0) {
+					tempSIZE = sizeof(void*);
+					size += tempSIZE;
+				}
+				else if(strcmp("int", tempTOKENS[i].text) == 0) {
+					tempSIZE = sizeof(int);
+					size += tempSIZE;
+				}
+				else {
+					fprintf(
+						stderr,
+						"[Controller]: ERROR: Invalid type in \"%s\".\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+						tempPATH
+					);
+					free(tempPATH);
+					free(commandsArgs[0][0]);
+					free(commandsArgs[0][1]);
+					free(commandsArgs[0][2]);
+					free(commandsArgs[0][3]);
+					free(commandsArgs[0][4]);
+					free(commandsArgs[0][5]);
+					free(commandsArgs[0]);
+					for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+						free(tokens[i2].text);
+					}
+					return 0;
+				}
+
+				i++;
+				if(i >= tokenCount) {
+					fprintf(
+						stderr,
+						"[Controller]: ERROR: The file \"%s\" is incomplete or corrupted.\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+						tempPATH
+					);
+					free(tempPATH);
+					free(commandsArgs[0][0]);
+					free(commandsArgs[0][1]);
+					free(commandsArgs[0][2]);
+					free(commandsArgs[0][3]);
+					free(commandsArgs[0][4]);
+					free(commandsArgs[0][5]);
+					free(commandsArgs[0]);
+					for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+						free(tokens[i2].text);
+					}
+					return 0;
+				}
+				
+				if(mem == NULL) {
+					mem = malloc(size);
+				}
+				else {
+					realloc(mem, size);
+				}
+
+				if(strcmp("/", tempTOKENS[i].text) == 0 && strcmp(":", tempTOKENS[i + 2].text) == 0) {
+					i += 3;
+					if(strcmp("NULL", tempTOKENS[i].text) == 0) {
+						if(sizeof(void*) > tempSIZE) {
+							fprintf(
+								stderr,
+								"[Controller]: ERROR: The file \"%s\" contains a field set to a bigger value than the type.\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+								tempPATH
+							);
+							free(tempPATH);
+							free(commandsArgs[0][0]);
+							free(commandsArgs[0][1]);
+							free(commandsArgs[0][2]);
+							free(commandsArgs[0][3]);
+							free(commandsArgs[0][4]);
+							free(commandsArgs[0][5]);
+							free(commandsArgs[0]);
+							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+								free(tokens[i2].text);
+							}
+							return 0;
+						}
+						memcpy(&(mem[size - tempSIZE]), &value, sizeof(void*));
+					}
+					else if(strcmp("stdin", tempTOKENS[i].text) == 0) {
+						if(sizeof(char*) > tempSIZE) {
+							fprintf(
+								stderr,
+								"[Controller]: ERROR: The file \"%s\" contains a field set to a bigger value than the type.\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+								tempPATH
+							);
+							free(tempPATH);
+							free(commandsArgs[0][0]);
+							free(commandsArgs[0][1]);
+							free(commandsArgs[0][2]);
+							free(commandsArgs[0][3]);
+							free(commandsArgs[0][4]);
+							free(commandsArgs[0][5]);
+							free(commandsArgs[0]);
+							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+								free(tokens[i2].text);
+							}
+							return 0;
+						}
+
+						if(sizeof(int) == tempSIZE) {
+							int temp = 0;
+							scanf("%d", &temp);
+							memcpy(&(mem[size - tempSIZE]), &temp, sizeof(int));
+						}
+						else if(sizeof(char*) == tempSIZE) {
+							char* temp = malloc(256 * sizeof(char));
+							scanf("%s", temp);
+							memcpy(&(mem[size - tempSIZE]), &temp, sizeof(char*));
+						}
+						else {
+							fprintf(
+								stderr,
+								"[Controller]: ERROR: The file \"%s\" Tries to assign user input to a unsupported type.\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+								tempPATH
+							);
+							free(tempPATH);
+							free(commandsArgs[0][0]);
+							free(commandsArgs[0][1]);
+							free(commandsArgs[0][2]);
+							free(commandsArgs[0][3]);
+							free(commandsArgs[0][4]);
+							free(commandsArgs[0][5]);
+							free(commandsArgs[0]);
+							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+								free(tokens[i2].text);
+							}
+							return 0;
+						}
+					}
+					else {
+						fprintf(
+							stderr,
+							"[Controller]: ERROR: The file \"%s\" contains an invalid value.\n - See https://github.com/CaptainBear079/CMI-AGI/blob/main/docs/Entities/info_files.md\n",
+							tempPATH
+						);
+						free(tempPATH);
+						free(commandsArgs[0][0]);
+						free(commandsArgs[0][1]);
+						free(commandsArgs[0][2]);
+						free(commandsArgs[0][3]);
+						free(commandsArgs[0][4]);
+						free(commandsArgs[0][5]);
+						free(commandsArgs[0]);
+						for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+							free(tokens[i2].text);
+						}
+						return 0;
+					}
+				}
+			}
+
+			commandsArgs[0][6] = mem;
+			commandsArgs[0][7] = malloc(sizeof(size_t));
+			(*(size_t*)commandsArgs[0][7]) = size;
+
 			free(tempPATH);
-
-			Token* tempTOKENS = tokenize(buf, 1024);
-
-			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+			for(int i2 = 0; i2 < tokenCount; i2++) {
+				free(tempTOKENS[i2].text);
+			}
+			for(int i2 = 0; i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
 			return CMI__CTRL_FUNC__CREATE_AI;
 		}
 		else if(strcmp("3d", tokens[2].text) == 0) {
 			// INDEV
-			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+			for(int i2 = 0; i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
 			return CMI__CTRL_FUNC__CREATE_3D;
 		}
 		else {
 			fprintf(stderr, "[Controller]: ERROR: Invalid command.");
-			for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+			for(int i2 = 0; i2 < t; i2++) {
 				free(tokens[i2].text);
 			}
 			return 0; // Invalid command
 		}
 	}
 	else {
-		for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
+		for(int i2 = 0; i2 < t; i2++) {
 			free(tokens[i2].text);
 		}
 
@@ -199,7 +365,7 @@ int controlFunction() {
 						&entityManager, (char*)commandsArgs[i][0], *((unsigned int*)commandsArgs[i][1]), (char*)commandsArgs[i][2],
 						*((unsigned long long*)commandsArgs[i][3]), *((unsigned long long*)commandsArgs[i][4]), *((unsigned long long*)commandsArgs[i][5])
 					);
-					EM__setDataSection(&entityManager, entityManager.entityCount - 1, commandsArgs[i][6], commandsArgs[i][7]);
+					EM__setDataSection(&entityManager, entityManager.entityCount - 1, commandsArgs[i][6], *((size_t*)commandsArgs[i][7]));
 					for(int i2 = 0; i2 < 8; i2++) {
 						free(commandsArgs[i][i2]);
 					}
@@ -216,7 +382,7 @@ int controlFunction() {
 
 				// Remove AI
 				case CMI__CTRL_FUNC__REMOVE_AI: {
-					EM__removeEntity(&entityManager, commandsArgs[i][0], false);
+					EM__removeEntity(&entityManager, *((unsigned int*)commandsArgs[i][0]), false);
 					free(commandsArgs[i][0]);
 					free(commandsArgs[i]);
 				} break;
@@ -304,5 +470,5 @@ int main(int argc, char* argv[]) {
 	//
 	// Cleanup
 	//
-	return 0;
+	return exitCode;
 }

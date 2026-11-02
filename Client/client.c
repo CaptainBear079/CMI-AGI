@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
 	#endif
 	WM__closeDisplay(&windows);
 
-	printf("[Environment]: Exit code: %d\n", viewportRet);
+	printf("[Viewport]: Exit code: %d\n", viewportRet);
 	if(args & CMI__ARG_GUI_MODE) {
 		printf("[GUI Control]: Exit code: %d\n", controlRet);
 	}

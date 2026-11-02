@@ -5,7 +5,7 @@ Token* readSave(char* save, int maxTokens) {
 	char* saveBuffer;
 	saveBuffer = malloc(513);
 	saveBuffer[511] = '\0';
-	int sb;
+	int sb = 0;
 	int sbSize = 512;
 	Token* tokens;
 
@@ -27,7 +27,7 @@ Token* readSave(char* save, int maxTokens) {
 		}
 	}
 
-	tokens = tokenize(saveBuffer, maxTokens);
+	tokens = tokenize(saveBuffer, maxTokens, NULL);
 
 	// Close save file
 	fclose(saveFile);
@@ -42,4 +42,5 @@ int parseSave(Save* save) {
 
 // INDEV
 int loadSave(Save* save) {
+	return 0;
 }
