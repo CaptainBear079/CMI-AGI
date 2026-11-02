@@ -16,7 +16,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
-			commandsArgs[0] = malloc(7 * sizeof(void**));
+			commandsArgs[0] = malloc(8 * sizeof(void**));
 			commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
 			strcpy((char*)commandsArgs[0][0], tokens[2].text);
 
@@ -164,7 +164,7 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 					mem = malloc(size);
 				}
 				else {
-					realloc(mem, size);
+					mem = realloc(mem, size);
 				}
 
 				if(strcmp("/", tempTOKENS[i].text) == 0 && strcmp(":", tempTOKENS[i + 2].text) == 0) {
@@ -293,19 +293,21 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 		}
 	}
 	else {
+		int temp = 0;
+		if(strcmp("start", tokens[0].text) == 0) {
+			temp = CMI__CTRL_FUNC__START_SIMULATION;
+		}
+		else if(strcmp("kill", tokens[0].text) == 0) {
+			temp = CMI__CTRL_FUNC__KILL_SIMULATION;
+		}
+		else if(strcmp("quit", tokens[0].text) == 0) {
+			temp = CMI__CTRL_FUNC__QUIT;
+		}
+		
 		for(int i2 = 0; i2 < t; i2++) {
 			free(tokens[i2].text);
 		}
-
-		if(strcmp("start", tokens[0].text) == 0) {
-			return CMI__CTRL_FUNC__START_SIMULATION;
-		}
-		else if(strcmp("kill", tokens[0].text) == 0) {
-			return CMI__CTRL_FUNC__KILL_SIMULATION;
-		}
-		else if(strcmp("quit", tokens[0].text) == 0) {
-			return CMI__CTRL_FUNC__QUIT;
-		}
+		return temp;
 	}
 	
 	fprintf(stderr, "[Controller]: ERROR: No or Invalid command.");

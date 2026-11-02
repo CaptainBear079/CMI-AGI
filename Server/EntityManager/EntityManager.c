@@ -45,7 +45,7 @@ void EM__init(EM* handler, bool printExitCodes) {
 	handler->tick = 0;
 	handler->tickYear = 0;
 	handler->entities = NULL;
-	handler->entityCount = 0;
+	handler->entityCount = 1;
 	handler->printExitCodes = printExitCodes;
 	handler->simActive = false;
 	return;
@@ -70,7 +70,7 @@ int EM__createEntity(
 		}
 
 		// Set id
-		for(int i = 1; i < handler->entityCount; i++) {
+		for(int i = 1; i < handler->entityCount && id == 0; i++) {
 			if(handler->entities[i] == NULL) {
 				id = i;
 			}
@@ -137,26 +137,28 @@ void EM__removeEntity(EM* handler, unsigned int id, bool save) {
 	free(handler->entities[id]->path);
 	free(handler->entities[id]->name);
 	free(handler->entities[id]);
+	handler->entities[id] = NULL;
 	return;
 }
 
 void EM__startSimulation(EM* handler) {
 	handler->simActive = true;
 	for(int i = 0; i < handler->entityCount; i++) {
+		handler->entities[i]->retCode = malloc(sizeof(int));
+	}
+	for(int i = 0; i < handler->entityCount; i++) {
 		printf("\n[Entity Manager] Starting Entity...");
 		fflush(stdout);
-		void* arg = malloc(sizeof(EM) + sizeof(int));
+		void* arg = malloc(sizeof(EM) + sizeof(unsigned int));
 		memcpy(arg, handler, sizeof(EM));
-		memcpy(arg + sizeof(EM), &(handler->entities[i]->id), sizeof(int));
+		memcpy(arg + sizeof(EM), &(handler->entities[i]->id), sizeof(unsigned int));
 		pthread_create(&(handler->entities[i]->thread), NULL, (void*)EntityThread, arg);
+		free(arg);
 		printf(" Done!\n");
 	}
 }
 
 void EM__quitSimulation(EM* handler) {
-	for(int i = 0; i < handler->entityCount; i++) {
-		handler->entities[i]->retCode = malloc(sizeof(int));
-	}
 	handler->simExit = true;
 	for(int i = 0; i < handler->entityCount; i++) {
 		pthread_join(handler->entities[i]->thread, (void**)&(handler->entities[i]->retCode));

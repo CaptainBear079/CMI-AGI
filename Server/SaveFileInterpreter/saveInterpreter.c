@@ -1,5 +1,6 @@
 #include "saveInterpreter.h"
 
+// INDEV
 Token* readSave(char* save, int maxTokens) {
 	// Variables
 	char* saveBuffer;
@@ -23,7 +24,7 @@ Token* readSave(char* save, int maxTokens) {
 		}
 		if(sb == sbSize) {
 			sbSize *= 2;
-			realloc(saveBuffer, sbSize + 1);
+			saveBuffer = realloc(saveBuffer, sbSize + 1);
 		}
 	}
 

@@ -24,14 +24,15 @@ void* controlThread(void* arg) {
 				controlRet = -1;
 				return NULL;
 			}
+			switch(ev.type) {
+				case ButtonPress: {
+					commands[1] = 11;
+					controlRet = 0;
+					return NULL;
+				} break;
+			}
 		}
-		switch(ev.type) {
-			case ButtonPress: {
-				commands[1] = 11;
-				controlRet = 0;
-				return NULL;
-			} break;
-		}
+		usleep(1000);
 	}
 	#endif
 	controlRet = 0;
