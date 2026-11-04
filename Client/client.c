@@ -4,6 +4,7 @@
 short args = 0;             // Argument bitmap
 int commands[6];            // Command queue
 void** commandsArgs[6];     // Argument lists for commands
+VP__EVENT* eventQueue;      // Queue for events from the control function
 WM windows;                 // The window handler
 pthread_t viewportThreadID; // pthread_t for the environment thread
 pthread_t controlThreadID;  // pthread_t for the control thread

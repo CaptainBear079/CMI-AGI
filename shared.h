@@ -40,3 +40,8 @@
 #define CMI__CTRL_FUNC__START_SIMULATION 9
 #define CMI__CTRL_FUNC__KILL_SIMULATION 10
 #define CMI__CTRL_FUNC__QUIT 11
+
+// - Viewport event code
+#define CMI__VP_EVENT__NO_EVENT 0
+#define CMI__VP_EVENT__ADD_MODEL 1
+#define CMI__VP_EVENT__REMOVE_MODEL 2
