@@ -16,7 +16,8 @@ void* viewportThread(void* arg) {
 		switch(CMI_VP_eventQueue[i].type) {
 			case CMI__VP_EVENT__NO_EVENT: break;
 			case CMI__VP_EVENT__ADD_MODEL: {
-				CMI_Client__setUniqueID(CMI_dimensions[CMI_VP_d].objects);
+				CMI_dimensions[CMI_VP_d].objects[CMI_VP_E__addModelPAYLOAD(i)->id].id = CMI_VP_E__addModelPAYLOAD(i)->id;
+				CMI_Client__setUniqueID(CMI_VP_E__addModelPAYLOAD(i)->id);
 				if(CMI_VP_E__addModelPAYLOAD(i)->type) {
 					Fast3D__addMesh(renderer, CMI_VP_E__addModelPAYLOAD(i)->CMI_VP_EP_AM__Model.mesh);
 				}

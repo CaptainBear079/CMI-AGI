@@ -1,19 +1,27 @@
 #pragma once
 
+// Definitions
+// Global means that the data is on the server
+// Local means that the data is only on the client
+
 // Standard libraries
+#include <stdio.h>
 #include <stdbool.h>
 #include <pthread.h>
+#include <unistd.h>
+#include <sys/select.h>
 
 // Library header includes
 #include <Fast3D.h> // Fast3D render engine
 
 // Modules
-#include "WindowManager/WindowManager.h"
+#include "Client/WindowManager/WindowManager.h"
+#include "Server/SaveFileInterpreter/saveInterpreter.h"
+#include "Server/EntityManager/EntityManager.h"
 
 // Global Structures
 // CMI__VP_EVENT__ADD_MODEL Payload structure
 typedef struct _CMI_VP__EVENT_PAYLOAD__ADD_MODEL_ {
-    unsigned long long id; // Model id
     bool type;             // Model type (Asset or Unique)
     union _CMI_VP_EP_AM__Model_ {
         unsigned long long id; // Asset id
@@ -29,10 +37,27 @@ typedef struct _CMI_VP__EVENT_ {
     } CMI_VP__EVENT__PAYLOAD;
 } CMI_VP__EVENT;
 
-typedef struct _Object_ {} Object;
+typedef struct _CMI_SEVER_UPDATE_EVENT_ {
+    unsigned short type; // Event type
+    union _CMI_SERVER_UPDATE_EVENT__PAYLOAD_ {} CMI_SERVER_UPDATE_EVENT__PAYLOAD;
+}
+
+#if defined(CMI_SERVER)
+typedef struct _Object_ {
+    unsigned short type; // Object type
+    void* data;          // Object data (depends on the type)
+} Object;
+#elif defined(CMI_CLIENT)
+typedef struct _Object_ {
+    unsigned short type;   // Object type
+    unsigned long long id; // Global id (because the client can't just use the index)
+    void* data;            // Object data (depends on the type)
+} Object;
+#endif
 
 typedef struct _Dimension_ {
     Object* objects;
+    unsigned long long allocatedObjects;
 } Dimension;
 
 typedef struct _World_ {
@@ -40,7 +65,22 @@ typedef struct _World_ {
 } World;
 
 typedef struct _Server_ {
-    World serverWorld; // Server side world data
+    // Setup
+    short args;                 // Argument bitmap
+    Save* save;                 // Save file data
+
+    // Queues
+    int commands[6];            // Command queue
+    void** commandsArgs[6];     // Argument lists for commands
+
+    // Data
+    World world;                // Server world data (synced with the client)
+    EM entityManager;           // Entity handle
+
+    // Flags
+    bool noNextCommand;         // Skip the printing of "\n$ "
+
+    // Indexes
 } Server;
 
 typedef struct _Client_ {
@@ -61,6 +101,8 @@ typedef struct _Client_ {
     pthread_t controlThreadID;  // pthread_t for the control thread
     int viewportRet;            // Return code of the environment thread
     int controlRet;             // Return code of the control thread
+
+    // Flags
     bool exitFlag;              // Shutdown signal to viewportThread and controlThread
 
     // Indexes
@@ -69,6 +111,15 @@ typedef struct _Client_ {
 
 // Defines
 // - Variable defines
+#if defined(CMI_SERVER)
+#define CMI_server server
+#define CMI_args CMI_server->args
+#define CMI_save CMI_server->save
+#define CMI_commands CMI_server->commands
+#define CMI_commandsArgs CMI_server->commandsArgs
+#define CMI_entityManager CMI_server->entityManager
+#define CMI_noNextCommand CMI_server->noNextCommand
+#elif defined(CMI_CLIENT)
 #define CMI_client client
 #define CMI_args CMI_client->args
 #define CMI_commands CMI_client->commands
@@ -83,6 +134,7 @@ typedef struct _Client_ {
 #define CMI_VP_eventQueue CMI_client->eventQueue
 #define CMI_VP_d CMI_client->d
 #define CMI_VP_E__addModelPAYLOAD(i) CMI_VP_eventQueue[i].CMI_VP__EVENT__PAYLOAD.addModelPAYLOAD
+#endif
 
 // - Error exit codes
 #define CMI_ERROR__INVALID_ARG -1

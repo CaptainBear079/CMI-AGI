@@ -1,13 +1,6 @@
 #include "server.h"
 
-// Global variables
-short args = 0;             // Argument bitmap
-Save save;                  // Save file data
-int commands[6];            // Command queue
-void** commandsArgs[6];     // Argument lists for commands
-EM entityManager;           // Entity handle
-bool noNextCommand = false; // Skip the printing of "\n$ "
-bool exitFlag = false;      // Shutdown flag
+Server* server;
 
 // Control function Command interpreter (CTRL_FUNC__interpretCommand V2)
 int CTRL_FUNC__interpretCommand(char buffer[]) {
@@ -16,16 +9,16 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 
 	if(strcmp("create", tokens[0].text) == 0) {
 		if(strcmp("ai", tokens[1].text) == 0) {
-			commandsArgs[0] = malloc(8 * sizeof(void**));
-			commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
-			strcpy((char*)commandsArgs[0][0], tokens[2].text);
+			CMI_commandsArgs[0] = malloc(8 * sizeof(void**));
+			CMI_commandsArgs[0][0] = malloc((strlen(tokens[2].text) + 1) * sizeof(char));
+			strcpy((char*)CMI_commandsArgs[0][0], tokens[2].text);
 
-			commandsArgs[0][1] = malloc(sizeof(unsigned int));
+			CMI_commandsArgs[0][1] = malloc(sizeof(unsigned int));
 			if(strcmp("cplugin", tokens[3].text) == 0) {
-				(*(unsigned int*)commandsArgs[0][1]) = EM_ENTITY__TYPE_CPLUGIN;
+				(*(unsigned int*)CMI_commandsArgs[0][1]) = EM_ENTITY__TYPE_CPLUGIN;
 			}
 			else if(strcmp("engine", tokens[3].text) == 0) {
-				(*(unsigned int*)commandsArgs[0][1]) = EM_ENTITY__TYPE_ENTITY_ENGINE;
+				(*(unsigned int*)CMI_commandsArgs[0][1]) = EM_ENTITY__TYPE_ENTITY_ENGINE;
 			}
 			else {
 				fprintf(stderr, "[Controller] ERROR: Invalid command.\n");
@@ -35,17 +28,17 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				return 0;
 			}
 
-			commandsArgs[0][2] = malloc((strlen(tokens[4].text) + 1) * sizeof(char));
-			strcpy((char*)commandsArgs[0][2], tokens[4].text);
+			CMI_commandsArgs[0][2] = malloc((strlen(tokens[4].text) + 1) * sizeof(char));
+			strcpy((char*)CMI_commandsArgs[0][2], tokens[4].text);
 
-			commandsArgs[0][3] = malloc(sizeof(unsigned long long));
-			(*(unsigned long long*)commandsArgs[0][3]) = atoll(tokens[5].text);
+			CMI_commandsArgs[0][3] = malloc(sizeof(unsigned long long));
+			(*(unsigned long long*)CMI_commandsArgs[0][3]) = atoll(tokens[5].text);
 
-			commandsArgs[0][4] = malloc(sizeof(unsigned long long));
-			(*(unsigned long long*)commandsArgs[0][4]) = atoll(tokens[6].text);
+			CMI_commandsArgs[0][4] = malloc(sizeof(unsigned long long));
+			(*(unsigned long long*)CMI_commandsArgs[0][4]) = atoll(tokens[6].text);
 
-			commandsArgs[0][5] = malloc(sizeof(unsigned long long));
-			(*(unsigned long long*)commandsArgs[0][5]) = atoll(tokens[7].text);
+			CMI_commandsArgs[0][5] = malloc(sizeof(unsigned long long));
+			(*(unsigned long long*)CMI_commandsArgs[0][5]) = atoll(tokens[7].text);
 
 			long size = strlen(tokens[4].text) + 6;
 			char* tempPATH = malloc(size * sizeof(char));
@@ -66,13 +59,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 					free(tokens[i2].text);
 				}
 				free(tempPATH);
-				free(commandsArgs[0][0]);
-				free(commandsArgs[0][1]);
-				free(commandsArgs[0][2]);
-				free(commandsArgs[0][3]);
-				free(commandsArgs[0][4]);
-				free(commandsArgs[0][5]);
-				free(commandsArgs[0]);
+				free(CMI_commandsArgs[0][0]);
+				free(CMI_commandsArgs[0][1]);
+				free(CMI_commandsArgs[0][2]);
+				free(CMI_commandsArgs[0][3]);
+				free(CMI_commandsArgs[0][4]);
+				free(CMI_commandsArgs[0][5]);
+				free(CMI_commandsArgs[0]);
 				return 0;
 			}
 
@@ -83,13 +76,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				fprintf(stderr, "[Controller]: ERROR: File \"%s\" is empty.\n", tempPATH);
 				fclose(fptr);
 				free(tempPATH);
-				free(commandsArgs[0][0]);
-				free(commandsArgs[0][1]);
-				free(commandsArgs[0][2]);
-				free(commandsArgs[0][3]);
-				free(commandsArgs[0][4]);
-				free(commandsArgs[0][5]);
-				free(commandsArgs[0]);
+				free(CMI_commandsArgs[0][0]);
+				free(CMI_commandsArgs[0][1]);
+				free(CMI_commandsArgs[0][2]);
+				free(CMI_commandsArgs[0][3]);
+				free(CMI_commandsArgs[0][4]);
+				free(CMI_commandsArgs[0][5]);
+				free(CMI_commandsArgs[0]);
 				for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 					free(tokens[i2].text);
 				}
@@ -126,13 +119,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 						tempPATH
 					);
 					free(tempPATH);
-					free(commandsArgs[0][0]);
-					free(commandsArgs[0][1]);
-					free(commandsArgs[0][2]);
-					free(commandsArgs[0][3]);
-					free(commandsArgs[0][4]);
-					free(commandsArgs[0][5]);
-					free(commandsArgs[0]);
+					free(CMI_commandsArgs[0][0]);
+					free(CMI_commandsArgs[0][1]);
+					free(CMI_commandsArgs[0][2]);
+					free(CMI_commandsArgs[0][3]);
+					free(CMI_commandsArgs[0][4]);
+					free(CMI_commandsArgs[0][5]);
+					free(CMI_commandsArgs[0]);
 					for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 						free(tokens[i2].text);
 					}
@@ -147,13 +140,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 						tempPATH
 					);
 					free(tempPATH);
-					free(commandsArgs[0][0]);
-					free(commandsArgs[0][1]);
-					free(commandsArgs[0][2]);
-					free(commandsArgs[0][3]);
-					free(commandsArgs[0][4]);
-					free(commandsArgs[0][5]);
-					free(commandsArgs[0]);
+					free(CMI_commandsArgs[0][0]);
+					free(CMI_commandsArgs[0][1]);
+					free(CMI_commandsArgs[0][2]);
+					free(CMI_commandsArgs[0][3]);
+					free(CMI_commandsArgs[0][4]);
+					free(CMI_commandsArgs[0][5]);
+					free(CMI_commandsArgs[0]);
 					for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 						free(tokens[i2].text);
 					}
@@ -177,13 +170,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 								tempPATH
 							);
 							free(tempPATH);
-							free(commandsArgs[0][0]);
-							free(commandsArgs[0][1]);
-							free(commandsArgs[0][2]);
-							free(commandsArgs[0][3]);
-							free(commandsArgs[0][4]);
-							free(commandsArgs[0][5]);
-							free(commandsArgs[0]);
+							free(CMI_commandsArgs[0][0]);
+							free(CMI_commandsArgs[0][1]);
+							free(CMI_commandsArgs[0][2]);
+							free(CMI_commandsArgs[0][3]);
+							free(CMI_commandsArgs[0][4]);
+							free(CMI_commandsArgs[0][5]);
+							free(CMI_commandsArgs[0]);
 							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 								free(tokens[i2].text);
 							}
@@ -199,13 +192,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 								tempPATH
 							);
 							free(tempPATH);
-							free(commandsArgs[0][0]);
-							free(commandsArgs[0][1]);
-							free(commandsArgs[0][2]);
-							free(commandsArgs[0][3]);
-							free(commandsArgs[0][4]);
-							free(commandsArgs[0][5]);
-							free(commandsArgs[0]);
+							free(CMI_commandsArgs[0][0]);
+							free(CMI_commandsArgs[0][1]);
+							free(CMI_commandsArgs[0][2]);
+							free(CMI_commandsArgs[0][3]);
+							free(CMI_commandsArgs[0][4]);
+							free(CMI_commandsArgs[0][5]);
+							free(CMI_commandsArgs[0]);
 							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 								free(tokens[i2].text);
 							}
@@ -229,13 +222,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 								tempPATH
 							);
 							free(tempPATH);
-							free(commandsArgs[0][0]);
-							free(commandsArgs[0][1]);
-							free(commandsArgs[0][2]);
-							free(commandsArgs[0][3]);
-							free(commandsArgs[0][4]);
-							free(commandsArgs[0][5]);
-							free(commandsArgs[0]);
+							free(CMI_commandsArgs[0][0]);
+							free(CMI_commandsArgs[0][1]);
+							free(CMI_commandsArgs[0][2]);
+							free(CMI_commandsArgs[0][3]);
+							free(CMI_commandsArgs[0][4]);
+							free(CMI_commandsArgs[0][5]);
+							free(CMI_commandsArgs[0]);
 							for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 								free(tokens[i2].text);
 							}
@@ -249,13 +242,13 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 							tempPATH
 						);
 						free(tempPATH);
-						free(commandsArgs[0][0]);
-						free(commandsArgs[0][1]);
-						free(commandsArgs[0][2]);
-						free(commandsArgs[0][3]);
-						free(commandsArgs[0][4]);
-						free(commandsArgs[0][5]);
-						free(commandsArgs[0]);
+						free(CMI_commandsArgs[0][0]);
+						free(CMI_commandsArgs[0][1]);
+						free(CMI_commandsArgs[0][2]);
+						free(CMI_commandsArgs[0][3]);
+						free(CMI_commandsArgs[0][4]);
+						free(CMI_commandsArgs[0][5]);
+						free(CMI_commandsArgs[0]);
 						for(int i2 = 0; i2 < 8 && i2 < t; i2++) {
 							free(tokens[i2].text);
 						}
@@ -264,9 +257,9 @@ int CTRL_FUNC__interpretCommand(char buffer[]) {
 				}
 			}
 
-			commandsArgs[0][6] = mem;
-			commandsArgs[0][7] = malloc(sizeof(size_t));
-			(*(size_t*)commandsArgs[0][7]) = size;
+			CMI_commandsArgs[0][6] = mem;
+			CMI_commandsArgs[0][7] = malloc(sizeof(size_t));
+			(*(size_t*)CMI_commandsArgs[0][7]) = size;
 
 			free(tempPATH);
 			for(int i2 = 0; i2 < tokenCount; i2++) {
@@ -331,9 +324,9 @@ int controlFunction() {
 	fflush(stdout);
 
 	// Command loop
-	while(!exitFlag) {
+	while(true) {
 		// Reset noNextCommand flag
-		noNextCommand = false;
+		CMI_noNextCommand = false;
 
 		// Reset buffer
 		for(int i = 0; i < 256; i++) {
@@ -352,26 +345,26 @@ int controlFunction() {
 			fgets(buffer, sizeof(buffer), stdin);
 
 			// Interpret command
-			commands[0] = CTRL_FUNC__interpretCommand(buffer);
+			CMI_commands[0] = CTRL_FUNC__interpretCommand(buffer);
 		}
 
 		// Execute commands
 		for(int i = 0; i < 6; i++) {
-			switch(commands[i]) {
+			switch(CMI_commands[i]) {
 				// No command
-				case CMI__CTRL_FUNC__NO_COMMAND: { if(i == 0) { noNextCommand = true; } } break;
+				case CMI__CTRL_FUNC__NO_COMMAND: { if(i == 0) { CMI_noNextCommand = true; } } break;
 
 				// Create AI
 				case CMI__CTRL_FUNC__CREATE_AI: {
 					EM__createEntity(
-						&entityManager, (char*)commandsArgs[i][0], *((unsigned int*)commandsArgs[i][1]), (char*)commandsArgs[i][2],
-						*((unsigned long long*)commandsArgs[i][3]), *((unsigned long long*)commandsArgs[i][4]), *((unsigned long long*)commandsArgs[i][5])
+						&CMI_entityManager, (char*)CMI_commandsArgs[i][0], *((unsigned int*)CMI_commandsArgs[i][1]), (char*)CMI_commandsArgs[i][2],
+						*((unsigned long long*)CMI_commandsArgs[i][3]), *((unsigned long long*)CMI_commandsArgs[i][4]), *((unsigned long long*)CMI_commandsArgs[i][5])
 					);
-					EM__setDataSection(&entityManager, entityManager.entityCount - 1, commandsArgs[i][6], *((size_t*)commandsArgs[i][7]));
+					EM__setDataSection(&CMI_entityManager, CMI_entityManager.entityCount - 1, CMI_commandsArgs[i][6], *((size_t*)CMI_commandsArgs[i][7]));
 					for(int i2 = 0; i2 < 8; i2++) {
-						free(commandsArgs[i][i2]);
+						free(CMI_commandsArgs[i][i2]);
 					}
-					free(commandsArgs[i]);
+					free(CMI_commandsArgs[i]);
 				} break;
 
 				// INDEV
@@ -384,9 +377,9 @@ int controlFunction() {
 
 				// Remove AI
 				case CMI__CTRL_FUNC__REMOVE_AI: {
-					EM__removeEntity(&entityManager, *((unsigned int*)commandsArgs[i][0]), false);
-					free(commandsArgs[i][0]);
-					free(commandsArgs[i]);
+					EM__removeEntity(&CMI_entityManager, *((unsigned int*)CMI_commandsArgs[i][0]), false);
+					free(CMI_commandsArgs[i][0]);
+					free(CMI_commandsArgs[i]);
 				} break;
 
 				// INDEV
@@ -408,7 +401,7 @@ int controlFunction() {
 				case CMI__CTRL_FUNC__START_SIMULATION: {
 					printf("[Controller] Starting simulation...");
 					fflush(stdout);
-					EM__startSimulation(&entityManager);
+					EM__startSimulation(&CMI_entityManager);
 					printf(" Success!\n");
 				} break;
 
@@ -416,12 +409,15 @@ int controlFunction() {
 				case CMI__CTRL_FUNC__KILL_SIMULATION: {
 					printf("[Controller] Ending simulation...");
 					fflush(stdout);
-					EM__quitSimulation(&entityManager);
+					EM__quitSimulation(&CMI_entityManager);
 					printf(" Success!\n");
 				} break;
 
 				// Quit program
-				case CMI__CTRL_FUNC__QUIT: { exitFlag = true; } break;
+				case CMI__CTRL_FUNC__QUIT: {
+					printf("\n");
+					return 0;
+				} break;
 				default: {
 					fprintf(stderr, "[Controller]: ERROR: Invalid command. Exit code: %d\n", CMI_ERROR__INVALID_COMMAND);
 					return CMI_ERROR__INVALID_COMMAND;
@@ -429,16 +425,12 @@ int controlFunction() {
 			}
 
 			// Reset command buffer entry
-			commands[i] = 0;
+			CMI_commands[i] = 0;
 		}
 
 		// Print command prompt
-		if(!noNextCommand) {
+		if(!CMI_noNextCommand) {
 			printf("\n$ ");
-			fflush(stdout);
-		}
-		else if(exitFlag) {
-			printf("\n");
 			fflush(stdout);
 		}
 	}
@@ -453,16 +445,16 @@ int main(int argc, char* argv[]) {
 	// - Interpreting arguments
 	for(int i = 1; i < argc; i++) {
 		if(strcmp("--restore", argv[i]) == 0) {
-			args = args | CMI__ARG_RESTORE_SESSION;
+			CMI_args = CMI_args | CMI__ARG_RESTORE_SESSION;
 		}
 	}
-	if(args & CMI__ARG_RESTORE_SESSION) {
-		loadSave(&save); // INDEV
+	if(CMI_args & CMI__ARG_RESTORE_SESSION) {
+		loadSave(CMI_save); // INDEV
 	}
 
 	printf("[Setup]: Preparing entity manager...\n");
 	// - Prepare entity manager
-	EM__init(&entityManager, (args & CMI__ARG_GUI_MODE));
+	EM__init(&CMI_entityManager, (CMI_args & CMI__ARG_GUI_MODE));
 
 	//
 	// Main loop

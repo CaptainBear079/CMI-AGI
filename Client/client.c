@@ -1,5 +1,4 @@
-#include "../shared.h"
-#include "Viewport/viewport.c"
+#include "client.h"
 
 Client* client;
 
@@ -34,6 +33,14 @@ void* controlThread(void* arg) {
 
 // Control function
 int controlFunction() {
+	while(!CMI_exitFlag) {
+		if(CMI_commands[0] != 0) {
+			switch(CMI_commands[0]) {
+				// Server update
+				case CMI_NET__UPDATE: {} break;
+			}
+		}
+	}
 	return 0;
 }
 
