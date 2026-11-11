@@ -37,7 +37,9 @@ int controlFunction() {
 		if(CMI_commands[0] != 0) {
 			switch(CMI_commands[0]) {
 				// Server update
-				case CMI_NET__UPDATE: {} break;
+				case CMI__CTRL_FUNC__NET_UPDATE: {
+					CMI_dimensions[CMI_VP_d].objects[CMI_eventPayload(i).newModelPayload->id].type = CMI_OBJ__3D_MODEL;
+				} break;
 			}
 		}
 	}

@@ -22,91 +22,104 @@
 // Global Structures
 // CMI__VP_EVENT__ADD_MODEL Payload structure
 typedef struct _CMI_VP__EVENT_PAYLOAD__ADD_MODEL_ {
-    bool type;             // Model type (Asset or Unique)
-    union _CMI_VP_EP_AM__Model_ {
-        unsigned long long id; // Asset id
-        Mesh* mesh;            // Mesh
-    } CMI_VP_EP_AM__Model;
+	bool type;             // Model type (Asset or Unique)
+	union _CMI_VP_EP_AM__Model_ {
+		unsigned long long id; // Asset id
+		Mesh* mesh;            // Mesh
+	} CMI_VP_EP_AM__Model;
 } CMI_VP__EVENT_PAYLOAD__ADD_MODEL;
 
 // Viewport event structure
 typedef struct _CMI_VP__EVENT_ {
-    unsigned short type; // Event type
-    union _CMI_VP__EVENT__PAYLOAD_ {
-        CMI_VP__EVENT_PAYLOAD__ADD_MODEL* addModelPAYLOAD; // Event payload for the CMI__VP_EVENT__ADD_MODEL
-    } CMI_VP__EVENT__PAYLOAD;
+	unsigned short type; // Event type
+	union _CMI_VP__EVENT__PAYLOAD_ {
+		CMI_VP__EVENT_PAYLOAD__ADD_MODEL* addModelPAYLOAD; // Event payload for the CMI__VP_EVENT__ADD_MODEL
+	} CMI_VP__EVENT__PAYLOAD;
 } CMI_VP__EVENT;
 
+// Client syncronization event newModel payload
+typedef struct _CMI_SUE_PL__newModel_ {
+	unsigned long long id; // Global id
+	Mesh* model;           // 3D Mesh
+} CMI_SUE_PL__newModel;
+
+// Client syncronization event removeModel
+typedef struct _CMI_SUE_PL__removeModel_ {
+	unsigned long long id; // Global id
+} CMI_SUE_PL__removeModel;
+
+// Client syncronization events
 typedef struct _CMI_SEVER_UPDATE_EVENT_ {
-    unsigned short type; // Event type
-    union _CMI_SERVER_UPDATE_EVENT__PAYLOAD_ {} CMI_SERVER_UPDATE_EVENT__PAYLOAD;
-}
+	unsigned short type;                             // Event type
+	union _CMI_SERVER_UPDATE_EVENT__PAYLOAD_ {
+		CMI_SUE_PL__newModel* newModelPayload;       // Event payload for the CMI_SUE__newModel event
+		CMI_SUE_PL__removeModel* removeModelPayload; // Event payload for the CMI_SUE__removeModel event
+	} CMI_SERVER_UPDATE_EVENT__PAYLOAD;
+} CMI_SERVER_UPDATE_EVENT;
 
-#if defined(CMI_SERVER)
+// Object definition
 typedef struct _Object_ {
-    unsigned short type; // Object type
-    void* data;          // Object data (depends on the type)
+	unsigned short type;   // Object type
+	void* data;            // Object data (depends on the type)
 } Object;
-#elif defined(CMI_CLIENT)
-typedef struct _Object_ {
-    unsigned short type;   // Object type
-    unsigned long long id; // Global id (because the client can't just use the index)
-    void* data;            // Object data (depends on the type)
-} Object;
-#endif
 
+// Dimension definition
 typedef struct _Dimension_ {
-    Object* objects;
-    unsigned long long allocatedObjects;
+	Object* objects;
+	unsigned long long allocatedObjects;
 } Dimension;
 
+// World definition
 typedef struct _World_ {
-    Dimension* dimensions;
+	Dimension* dimensions;
 } World;
 
+// Server data definition
 typedef struct _Server_ {
-    // Setup
-    short args;                 // Argument bitmap
-    Save* save;                 // Save file data
+	// Setup
+	short args;                 // Argument bitmap
+	Save* save;                 // Save file data
 
-    // Queues
-    int commands[6];            // Command queue
-    void** commandsArgs[6];     // Argument lists for commands
+	// Queues
+	int commands[6];            // Command queue
+	void** commandsArgs[6];     // Argument lists for commands
 
-    // Data
-    World world;                // Server world data (synced with the client)
-    EM entityManager;           // Entity handle
+	// Data
+	World world;                // Server world data (synced with the client)
+	EM entityManager;           // Entity handle
 
-    // Flags
-    bool noNextCommand;         // Skip the printing of "\n$ "
+	// Flags
+	bool noNextCommand;         // Skip the printing of "\n$ "
 
-    // Indexes
+	// Indexes
 } Server;
 
+// Client data definition
 typedef struct _Client_ {
-    // Setup
-    short args;                 // Argument bitmap
+	// Setup
+	short args;                          // Argument bitmap
 
-    // Queues
-    int commands[6];            // Command queue
-    void** commandsArgs[6];     // Argument lists for commands
-    CMI_VP__EVENT* eventQueue;  // Viewport event queue
+	// Queues
+	int commands[6];                     // Command queue
+	void** commandsArgs[6];              // Argument lists for commands
+	CMI_SERVER_UPDATE_EVENT* eventQueue; // Server update event queue
+	CMI_VP__EVENT* VPeventQueue;         // Viewport event queue
 
-    // Data
-    World world;                // Local world data (synced via updates from the server)
-    WM windows;                 // The window handler
+	// Data
+	World world;                         // Local world data (synced via updates from the server)
+	WM windows;                          // The window handler
 
-    // Threads
-    pthread_t viewportThreadID; // pthread_t for the environment thread
-    pthread_t controlThreadID;  // pthread_t for the control thread
-    int viewportRet;            // Return code of the environment thread
-    int controlRet;             // Return code of the control thread
+	// Threads
+	pthread_t viewportThreadID;          // pthread_t for the environment thread
+	pthread_t controlThreadID;           // pthread_t for the control thread
+	int viewportRet;                     // Return code of the environment thread
+	int controlRet;                      // Return code of the control thread
 
-    // Flags
-    bool exitFlag;              // Shutdown signal to viewportThread and controlThread
+	// Flags
+	bool exitFlag;                       // Shutdown signal to viewportThread and controlThread
 
-    // Indexes
-    unsigned long long d;       // Dimension index for the renderer
+	// Indexes
+	unsigned long long d;                // Dimension index for the renderer
 } Client;
 
 // Defines
@@ -123,6 +136,8 @@ typedef struct _Client_ {
 #define CMI_client client
 #define CMI_args CMI_client->args
 #define CMI_commands CMI_client->commands
+#define CMI_eventQueue CMI_client->eventQueue
+#define CMI_eventPayload(i) CMI_client->eventQueue[i].CMI_SERVER_UPDATE_EVENT__PAYLOAD
 #define CMI_world CMI_client->world
 #define CMI_dimensions CMI_world.dimensions
 #define CMI_windows CMI_client->windows
@@ -131,7 +146,7 @@ typedef struct _Client_ {
 #define CMI_viewportRet CMI_client->viewportRet
 #define CMI_controlRet CMI_client->controlRet
 #define CMI_exitFlag CMI_client->exitFlag
-#define CMI_VP_eventQueue CMI_client->eventQueue
+#define CMI_VP_eventQueue CMI_client->VPeventQueue
 #define CMI_VP_d CMI_client->d
 #define CMI_VP_E__addModelPAYLOAD(i) CMI_VP_eventQueue[i].CMI_VP__EVENT__PAYLOAD.addModelPAYLOAD
 #endif
@@ -174,7 +189,8 @@ typedef struct _Client_ {
 #define CMI__CTRL_FUNC__REMOVE_3D 8
 #define CMI__CTRL_FUNC__START_SIMULATION 9
 #define CMI__CTRL_FUNC__KILL_SIMULATION 10
-#define CMI__CTRL_FUNC__QUIT 11
+#define CMI__CTRL_FUNC__NET_UPDATE 11
+#define CMI__CTRL_FUNC__QUIT 12
 
 // - Viewport event code
 #define CMI__VP_EVENT__NO_EVENT 0
