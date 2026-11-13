@@ -124,7 +124,7 @@ typedef struct _Client_ {
 
 // Defines
 // - Variable defines
-#if defined(CMI_SERVER)
+#ifdef CMI_SERVER
 #define CMI_server server
 #define CMI_args CMI_server->args
 #define CMI_save CMI_server->save
@@ -132,7 +132,8 @@ typedef struct _Client_ {
 #define CMI_commandsArgs CMI_server->commandsArgs
 #define CMI_entityManager CMI_server->entityManager
 #define CMI_noNextCommand CMI_server->noNextCommand
-#elif defined(CMI_CLIENT)
+#endif
+#ifdef CMI_CLIENT
 #define CMI_client client
 #define CMI_args CMI_client->args
 #define CMI_commands CMI_client->commands
@@ -177,6 +178,10 @@ typedef struct _Client_ {
 #define CMI__CTRL_WINDOW_POS_X 755
 #define CMI__CTRL_WINDOW_POS_Y 0
 
+// - Object types
+#define CMI_OBJ__NO_TYPE 0
+#define CMI_OBJ__3D_MODEL 1
+
 // - Control function commands
 #define CMI__CTRL_FUNC__NO_COMMAND 0
 #define CMI__CTRL_FUNC__CREATE_AI 1
@@ -191,6 +196,10 @@ typedef struct _Client_ {
 #define CMI__CTRL_FUNC__KILL_SIMULATION 10
 #define CMI__CTRL_FUNC__NET_UPDATE 11
 #define CMI__CTRL_FUNC__QUIT 12
+
+// Server Update Event types
+#define CMI_SUE__EMPTY 0
+#define CMI_SUE__NEW_MODEL 1
 
 // - Viewport event code
 #define CMI__VP_EVENT__NO_EVENT 0

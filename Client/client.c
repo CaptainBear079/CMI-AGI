@@ -31,15 +31,85 @@ void* controlThread(void* arg) {
 }
 #endif
 
+// Control function Command interpreter (CTRL_FUNC__interpretCommand V2) Client Version
+int CTRL_FUNC__interpretCommand(char buffer[]) {
+	size_t t = 8;
+	Token* tokens = tokenize(buffer, 8, &t);
+
+	if(false) {
+	}
+	else {
+		int temp = 0;
+		if(strcmp("quit", tokens[0].text) == 0) {
+			temp = CMI__CTRL_FUNC__QUIT;
+		}
+		
+		for(int i2 = 0; i2 < t; i2++) {
+			free(tokens[i2].text);
+		}
+		return temp;
+	}
+	
+	fprintf(stderr, "[Controller]: ERROR: No or Invalid command.");
+	return 0; // No/Invalid command
+}
+
 // Control function
 int controlFunction() {
+	// Variables
+	char buffer[257];
+	buffer[256] = '\0';
+	fd_set cmd, cmd_copy;
+	FD_ZERO(&cmd);
+	FD_SET(STDIN_FILENO, &cmd);
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 10000;
+
+	if(CMI_args & CMI__ARG_GUI_MODE) {
+		// First command promt
+		printf("\n $");
+		fflush(stdout);
+	}
 	while(!CMI_exitFlag) {
-		if(CMI_commands[0] != 0) {
-			switch(CMI_commands[0]) {
-				// Server update
-				case CMI__CTRL_FUNC__NET_UPDATE: {
-					CMI_dimensions[CMI_VP_d].objects[CMI_eventPayload(i).newModelPayload->id].type = CMI_OBJ__3D_MODEL;
-				} break;
+		if(CMI_args & CMI__ARG_GUI_MODE) {
+			// Reset buffer
+			for(int i = 0; i < 256; i++) {
+				buffer[i] = '\0';
+			}
+
+			// Check for stdin input
+			cmd_copy = cmd;
+			if(select(STDIN_FILENO + 1, &cmd_copy, NULL, NULL, &timeout) < 0) {
+				fprintf(stderr, "[Controller] Error while waiting for input from stdin.\n");
+				return 1;
+			}
+
+			// Read input
+			if(FD_ISSET(STDIN_FILENO, &cmd_copy)) {
+				fgets(buffer, sizeof(buffer), stdin);
+
+				// Interpret command
+				CMI_commands[0] = CTRL_FUNC__interpretCommand(buffer);
+			}
+		}
+
+		for(int i = 0; i < 6; i++) {
+			if(CMI_commands[i] != 0) {
+				switch(CMI_commands[i]) {
+					// Server update
+					case CMI__CTRL_FUNC__NET_UPDATE: {
+						switch(CMI_eventQueue[i].type) {
+							case CMI_SUE__NEW_MODEL: {
+								CMI_dimensions[CMI_VP_d].objects[CMI_eventPayload(i).newModelPayload->id].type = CMI_OBJ__3D_MODEL;
+							} break;
+						}
+					} break;
+					case CMI__CTRL_FUNC__QUIT: {
+						printf("\n");
+						return 0;
+					}
+				}
 			}
 		}
 	}
