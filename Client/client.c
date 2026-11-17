@@ -99,7 +99,7 @@ int controlFunction() {
 				switch(CMI_commands[i]) {
 					// Server update
 					case CMI__CTRL_FUNC__NET_UPDATE: {
-						switch(CMI_eventQueue[i].type) {
+						switch(CMI_eventQueueSUE[i].type) {
 							case CMI_SUE__NEW_MODEL: {
 								CMI_dimensions[CMI_VP_d].objects[CMI_eventPayload(i).newModelPayload->id].type = CMI_OBJ__3D_MODEL;
 							} break;
@@ -120,11 +120,18 @@ int main(int argc, char* argv[]) {
 	//
 	// Setup
 	//
-	// Init client
+	// - Init client
 	client = malloc(sizeof(Client));
+	//   - Argument bitmap
 	client->args = 0;
 
-	client->eventQueue = malloc(16 * sizeof(CMI_VP__EVENT));
+	//   - Queues
+	for(int i = 0; i < 6; i++) {
+		client->commands[i] = 0;
+		client->commandsArgs[i] = NULL;
+	}
+	client->eventQueueSUE = malloc(16 * sizeof(CMI_SERVER_UPDATE_EVENT));
+	client->eventQueueVP = malloc(16 * sizeof(CMI_VP__EVENT));
 
 	client->viewportRet = 0;
 	client->controlRet = 0;

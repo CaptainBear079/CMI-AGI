@@ -441,6 +441,11 @@ int main(int argc, char* argv[]) {
 	//
 	// Setup
 	//
+	// - Init server
+	server = malloc(sizeof(Server));
+	//   - Argument bitmap
+	server->args = 0;
+
 	printf("[Setup]: Interpreting arguments...\n");
 	// - Interpreting arguments
 	for(int i = 1; i < argc; i++) {

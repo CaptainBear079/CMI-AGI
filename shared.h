@@ -97,29 +97,29 @@ typedef struct _Server_ {
 // Client data definition
 typedef struct _Client_ {
 	// Setup
-	short args;                          // Argument bitmap
+	short args;                             // Argument bitmap
 
 	// Queues
-	int commands[6];                     // Command queue
-	void** commandsArgs[6];              // Argument lists for commands
-	CMI_SERVER_UPDATE_EVENT* eventQueue; // Server update event queue
-	CMI_VP__EVENT* VPeventQueue;         // Viewport event queue
+	int commands[6];                        // Command queue
+	void** commandsArgs[6];                 // Argument lists for commands
+	CMI_SERVER_UPDATE_EVENT* eventQueueSUE; // Server update event queue
+	CMI_VP__EVENT* eventQueueVP;            // Viewport event queue
 
 	// Data
-	World world;                         // Local world data (synced via updates from the server)
-	WM windows;                          // The window handler
+	World world;                            // Local world data (synced via updates from the server)
+	WM windows;                             // The window handler
 
 	// Threads
-	pthread_t viewportThreadID;          // pthread_t for the environment thread
-	pthread_t controlThreadID;           // pthread_t for the control thread
-	int viewportRet;                     // Return code of the environment thread
-	int controlRet;                      // Return code of the control thread
+	pthread_t viewportThreadID;             // pthread_t for the environment thread
+	pthread_t controlThreadID;              // pthread_t for the control thread
+	int viewportRet;                        // Return code of the environment thread
+	int controlRet;                         // Return code of the control thread
 
 	// Flags
-	bool exitFlag;                       // Shutdown signal to viewportThread and controlThread
+	bool exitFlag;                          // Shutdown signal to viewportThread and controlThread
 
 	// Indexes
-	unsigned long long d;                // Dimension index for the renderer
+	unsigned long long d;                   // Dimension index for the renderer
 } Client;
 
 // Defines
@@ -137,8 +137,8 @@ typedef struct _Client_ {
 #define CMI_client client
 #define CMI_args CMI_client->args
 #define CMI_commands CMI_client->commands
-#define CMI_eventQueue CMI_client->eventQueue
-#define CMI_eventPayload(i) CMI_client->eventQueue[i].CMI_SERVER_UPDATE_EVENT__PAYLOAD
+#define CMI_eventQueueSUE CMI_client->eventQueueSUE
+#define CMI_eventPayload(i) CMI_eventQueueSUE[i].CMI_SERVER_UPDATE_EVENT__PAYLOAD
 #define CMI_world CMI_client->world
 #define CMI_dimensions CMI_world.dimensions
 #define CMI_windows CMI_client->windows
@@ -147,7 +147,7 @@ typedef struct _Client_ {
 #define CMI_viewportRet CMI_client->viewportRet
 #define CMI_controlRet CMI_client->controlRet
 #define CMI_exitFlag CMI_client->exitFlag
-#define CMI_VP_eventQueue CMI_client->VPeventQueue
+#define CMI_VP_eventQueue CMI_client->eventQueueVP
 #define CMI_VP_d CMI_client->d
 #define CMI_VP_E__addModelPAYLOAD(i) CMI_VP_eventQueue[i].CMI_VP__EVENT__PAYLOAD.addModelPAYLOAD
 #endif
